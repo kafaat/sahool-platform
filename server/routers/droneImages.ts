@@ -189,6 +189,140 @@ export const droneImagesRouter = router({
       };
     }),
 
+  // محاكاة معالجة الصورة (للتجربة)
+  simulateProcessing: protectedProcedure
+    .input(
+      z.object({
+        imageId: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await ctx.db;
+      if (!db) {
+        throw new Error('Database not available');
+      }
+
+      // الحصول على الصورة
+      const [image] = await db
+        .select()
+        .from(droneImages)
+        .where(eq(droneImages.id, input.imageId))
+        .limit(1);
+
+      if (!image) {
+        throw new Error('الصورة غير موجودة');
+      }
+
+      // تحديث حالة الصورة إلى "processing"
+      await db
+        .update(droneImages)
+        .set({ status: 'processing' })
+        .where(eq(droneImages.id, input.imageId));
+
+      // تحديث حالة المهام إلى "processing"
+      await db
+        .update(processingJobs)
+        .set({ status: 'processing', startedAt: new Date(), progress: 10 })
+        .where(eq(processingJobs.imageId, input.imageId));
+
+      // محاكاة المعالجة (في الخلفية)
+      setTimeout(async () => {
+        try {
+          // إنشاء نتائج NDVI تجريبية
+          const avgNdvi = (Math.random() * 0.4 + 0.4).toFixed(3); // 0.4-0.8
+          const minNdvi = (parseFloat(avgNdvi) - 0.2).toFixed(3);
+          const maxNdvi = (parseFloat(avgNdvi) + 0.2).toFixed(3);
+          const healthScore = Math.round(parseFloat(avgNdvi) * 100);
+
+          await db.insert(ndviAnalysis).values({
+            imageId: input.imageId,
+            farmId: image.farmId,
+            fieldId: image.fieldId,
+            avgNdvi,
+            minNdvi,
+            maxNdvi,
+            healthScore,
+          });
+
+          // إنشاء كشف آفات تجريبي (احتمال 30%)
+          if (Math.random() < 0.3) {
+            const severities = ['low', 'moderate', 'high'] as const;
+            const pestTypes = [
+              'حشرات المن',
+              'الذبابة البيضاء',
+              'دودة ورق القطن',
+              'العنكبوت الأحمر',
+            ];
+
+            await db.insert(pestDetections).values({
+              imageId: input.imageId,
+              farmId: image.farmId,
+              fieldId: image.fieldId,
+              pestType: pestTypes[Math.floor(Math.random() * pestTypes.length)],
+              severity: severities[Math.floor(Math.random() * severities.length)],
+              affectedArea: (Math.random() * 5 + 0.5).toFixed(2),
+              confidence: (Math.random() * 20 + 75).toFixed(1),
+              recommendations: 'يُنصح بمراقبة المنطقة المصابة واستخدام المبيدات المناسبة إذا لزم الأمر.',
+            });
+          }
+
+          // إنشاء تحليل إجهاد مائي تجريبي (احتمال 40%)
+          if (Math.random() < 0.4) {
+            const stressLevels = ['none', 'low', 'moderate', 'high'] as const;
+            const stressLevel = stressLevels[Math.floor(Math.random() * stressLevels.length)];
+
+            await db.insert(waterStressAnalysis).values({
+              imageId: input.imageId,
+              farmId: image.farmId,
+              fieldId: image.fieldId,
+              avgNdwi: (Math.random() * 0.4 - 0.2).toFixed(3),
+              stressLevel,
+              affectedArea: stressLevel === 'none' ? '0' : (Math.random() * 3 + 0.5).toFixed(2),
+              recommendations:
+                stressLevel === 'high' || stressLevel === 'moderate'
+                  ? 'يُنصح بزيادة كمية الري في المناطق المتأثرة.'
+                  : 'مستوى الري مناسب.',
+            });
+          }
+
+          // تحديث حالة المهام إلى "completed"
+          await db
+            .update(processingJobs)
+            .set({ status: 'completed', completedAt: new Date(), progress: 100 })
+            .where(eq(processingJobs.imageId, input.imageId));
+
+          // تحديث حالة الصورة إلى "completed"
+          await db
+            .update(droneImages)
+            .set({ status: 'completed' })
+            .where(eq(droneImages.id, input.imageId));
+        } catch (error) {
+          console.error('Simulation error:', error);
+
+          // تحديث حالة المهام إلى "failed"
+          await db
+            .update(processingJobs)
+            .set({
+              status: 'failed',
+              errorMessage: 'فشلت المعالجة التجريبية',
+              completedAt: new Date(),
+            })
+            .where(eq(processingJobs.imageId, input.imageId));
+
+          // تحديث حالة الصورة إلى "failed"
+          await db
+            .update(droneImages)
+            .set({ status: 'failed' })
+            .where(eq(droneImages.id, input.imageId));
+        }
+      }, 5000); // 5 ثواني
+
+      return {
+        success: true,
+        message: 'بدأت المعالجة التجريبية، ستكتمل خلال 5 ثواني...',
+      };
+    }),
+
   // حذف صورة
   delete: protectedProcedure
     .input(

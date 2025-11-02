@@ -29,6 +29,8 @@ export default function DroneImageUploader({
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  const simulateMutation = trpc.droneImages.simulateProcessing.useMutation();
+
   const uploadMutation = trpc.droneImages.upload.useMutation({
     onSuccess: (data, variables, context: any) => {
       // تحديث حالة الملف
@@ -47,6 +49,11 @@ export default function DroneImageUploader({
       if (onImageUploaded) {
         onImageUploaded(data.imageId);
       }
+
+      // بدء المعالجة التجريبية
+      setTimeout(() => {
+        simulateMutation.mutate({ imageId: data.imageId });
+      }, 1000);
     },
     onError: (error, variables, context: any) => {
       setUploadingFiles((prev) =>

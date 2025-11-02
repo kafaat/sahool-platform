@@ -5,6 +5,9 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Map, Bug, Droplet, Ruler, FileText } from 'lucide-react';
 import DroneImageUploader from '@/components/DroneImageUploader';
+import NDVIMapVisualization from '@/components/NDVIMapVisualization';
+import PestDetectionVisualization from '@/components/PestDetectionVisualization';
+import WaterStressVisualization from '@/components/WaterStressVisualization';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
@@ -203,68 +206,28 @@ export default function DroneAnalysis() {
 
           {/* صحة المحاصيل (NDVI) */}
           <TabsContent value="ndvi">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">خريطة صحة المحاصيل (NDVI)</h3>
-              {analysisResults?.ndvi ? (
-                <div>
-                  <p>النتائج:</p>
-                  <pre className="bg-muted p-4 rounded mt-2">
-                    {JSON.stringify(analysisResults.ndvi, null, 2)}
-                  </pre>
-                </div>
-              ) : (
+            {analysisResults?.ndvi ? (
+              <NDVIMapVisualization analysis={analysisResults.ndvi} />
+            ) : (
+              <Card className="p-6">
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    لا توجد نتائج تحليل NDVI بعد. هذه الميزة قيد التطوير.
+                    لا توجد نتائج تحليل NDVI بعد. قم برفع صورة وانتظر اكتمال المعالجة.
                   </AlertDescription>
                 </Alert>
-              )}
-            </Card>
+              </Card>
+            )}
           </TabsContent>
 
           {/* الآفات */}
           <TabsContent value="pests">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">كشف الآفات والأمراض</h3>
-              {analysisResults?.pests && analysisResults.pests.length > 0 ? (
-                <div>
-                  <p>عدد الآفات المكتشفة: {analysisResults.pests.length}</p>
-                  <pre className="bg-muted p-4 rounded mt-2">
-                    {JSON.stringify(analysisResults.pests, null, 2)}
-                  </pre>
-                </div>
-              ) : (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    لا توجد آفات مكتشفة. هذه الميزة قيد التطوير.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </Card>
+            <PestDetectionVisualization detections={analysisResults?.pests || []} />
           </TabsContent>
 
           {/* الإجهاد المائي */}
           <TabsContent value="water">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">تحليل الإجهاد المائي</h3>
-              {analysisResults?.waterStress ? (
-                <div>
-                  <p>النتائج:</p>
-                  <pre className="bg-muted p-4 rounded mt-2">
-                    {JSON.stringify(analysisResults.waterStress, null, 2)}
-                  </pre>
-                </div>
-              ) : (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    لا توجد نتائج تحليل الإجهاد المائي. هذه الميزة قيد التطوير.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </Card>
+            <WaterStressVisualization analysis={analysisResults?.waterStress || null} />
           </TabsContent>
 
           {/* قياس المساحات */}
