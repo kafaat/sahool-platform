@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { MapPin, Plus, Search, Trash2, Edit, TrendingUp } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { NoFarmsEmptyState } from "@/components/EmptyStates";
 
 // تحسين 1: Types منفصلة
 interface Farm {
@@ -343,7 +344,7 @@ export default function Farms() {
               </CardContent>
             </Card>
           ) : (
-            <EmptyState onAddClick={handleAddFarm} />
+            <NoFarmsEmptyState onAddFarm={handleAddFarm} />
           )
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
