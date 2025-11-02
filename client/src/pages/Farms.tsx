@@ -46,12 +46,12 @@ export default function Farms() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">المزارع</h1>
+            <h1 className="text-3xl font-bold text-foreground">المزارع</h1>
             <p className="text-muted-foreground mt-2">
               إدارة المزارع والحقول الخاصة بك
             </p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 ml-2" />
             إضافة مزرعة
           </Button>
@@ -74,7 +74,7 @@ export default function Farms() {
         ) : farms && farms.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {farms.map((farm) => (
-              <Card key={farm.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={farm.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
                 <CardHeader>
                   <CardTitle>{farm.name}</CardTitle>
                   <CardDescription className="flex items-center gap-1">
@@ -102,14 +102,16 @@ export default function Farms() {
             ))}
           </div>
         ) : (
-          <Card>
+          <Card className="border-2 border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+              <div className="bg-green-50 p-4 rounded-full mb-4">
+                <MapPin className="h-12 w-12 text-primary" />
+              </div>
               <h3 className="text-lg font-semibold mb-2">لا توجد مزارع مسجلة</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 ابدأ بإضافة مزرعتك الأولى
               </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
+              <Button onClick={() => setIsDialogOpen(true)} className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة مزرعة
               </Button>
