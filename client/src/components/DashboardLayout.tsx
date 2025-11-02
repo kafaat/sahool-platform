@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane, Microscope } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Wrench, label: "المعدات", path: "/equipment" },
   { icon: Calendar, label: "خطط العمل", path: "/work-planner" },
   { icon: Plane, label: "تحليل الطائرات", path: "/drone-analysis" },
+  { icon: Microscope, label: "الكشف عن الأمراض", path: "/disease-detection" },
   { icon: Activity, label: "المراقبة المباشرة", path: "/live-monitoring" },
   { icon: Bell, label: "التنبيهات", path: "/alerts" },
 ];

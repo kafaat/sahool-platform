@@ -254,3 +254,60 @@ export type NdviZone = typeof ndviZones.$inferSelect;
 export type FieldBoundary = typeof fieldBoundaries.$inferSelect;
 export type PestDetection = typeof pestDetections.$inferSelect;
 export type WaterStressAnalysis = typeof waterStressAnalysis.$inferSelect;
+
+// ==========================================
+// جداول نظام الكشف عن أمراض المحاصيل (YOLO)
+// ==========================================
+
+// جدول اكتشافات الأمراض
+export const diseaseDetections = mysqlTable("disease_detections", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  fieldId: int("fieldId"),
+  imageUrl: varchar("imageUrl", { length: 500 }).notNull(),
+  cropType: varchar("cropType", { length: 50 }).notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiseaseDetection = typeof diseaseDetections.$inferSelect;
+export type InsertDiseaseDetection = typeof diseaseDetections.$inferInsert;
+
+// جدول الأمراض المكتشفة
+export const detectedDiseases = mysqlTable("detected_diseases", {
+  id: int("id").autoincrement().primaryKey(),
+  detectionId: int("detectionId").notNull(),
+  diseaseName: varchar("diseaseName", { length: 100 }).notNull(),
+  confidence: varchar("confidence", { length: 10 }).notNull(), // نسبة الثقة (0-100)
+  severity: mysqlEnum("severity", ["low", "moderate", "high", "critical"]).notNull(),
+  bboxX: int("bboxX"), // Bounding Box X
+  bboxY: int("bboxY"), // Bounding Box Y
+  bboxWidth: int("bboxWidth"), // Bounding Box Width
+  bboxHeight: int("bboxHeight"), // Bounding Box Height
+  affectedArea: varchar("affectedArea", { length: 20 }), // المساحة المتأثرة (هكتار)
+  recommendations: text("recommendations"), // التوصيات
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DetectedDisease = typeof detectedDiseases.$inferSelect;
+export type InsertDetectedDisease = typeof detectedDiseases.$inferInsert;
+
+// جدول قاعدة بيانات الأمراض
+export const diseaseDatabase = mysqlTable("disease_database", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  scientificName: varchar("scientificName", { length: 200 }),
+  cropType: varchar("cropType", { length: 50 }).notNull(),
+  symptoms: text("symptoms"), // الأعراض
+  causes: text("causes"), // الأسباب
+  treatment: text("treatment"), // العلاج
+  prevention: text("prevention"), // الوقاية
+  imageUrl: varchar("imageUrl", { length: 500 }), // صورة مرجعية
+  severity: mysqlEnum("severity", ["low", "moderate", "high", "critical"]).default("moderate").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Disease = typeof diseaseDatabase.$inferSelect;
+export type InsertDisease = typeof diseaseDatabase.$inferInsert;

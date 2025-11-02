@@ -22,6 +22,13 @@
       "when": 1762124746243,
       "tag": "0002_friendly_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1762126258701,
+      "tag": "0003_spooky_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

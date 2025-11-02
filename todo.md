@@ -285,3 +285,39 @@
 - [ ] اختبار كامل للنظام
 - [ ] إنشاء دليل المستخدم
 - [ ] حفظ checkpoint نهائي
+
+
+## المرحلة 17: نظام YOLO للكشف عن أمراض المحاصيل
+
+### قاعدة البيانات
+- [ ] إضافة جدول disease_detections
+- [ ] إضافة جدول detected_diseases
+- [ ] إضافة جدول disease_database
+- [ ] تشغيل migrations
+
+### tRPC Routers
+- [ ] تطوير diseaseDetection router
+- [ ] تطوير uploadImage procedure
+- [ ] تطوير getResults procedure
+- [ ] تطوير getDiseaseInfo procedure
+- [ ] تطوير simulateYOLO procedure
+
+### قاعدة بيانات الأمراض
+- [ ] إضافة 30+ مرض للطماطم
+- [ ] إضافة أمراض البطاطس
+- [ ] إضافة أمراض الذرة
+- [ ] إضافة أمراض العنب
+- [ ] إضافة أمراض التفاح
+
+### مكونات UI
+- [ ] تطوير DiseaseDetectionUploader.tsx
+- [ ] تطوير DiseaseResults.tsx
+- [ ] تطوير DiseaseInfoModal.tsx
+- [ ] تطوير DiseaseHistory.tsx
+
+### الصفحة الرئيسية
+- [ ] تطوير DiseaseDetection.tsx
+- [ ] إضافة route في App.tsx
+- [ ] إضافة navigation في DashboardLayout
+- [ ] اختبار شامل
+- [ ] حفظ checkpoint نهائي
