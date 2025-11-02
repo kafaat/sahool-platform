@@ -158,7 +158,7 @@ export function validateInput(schema: z.ZodSchema) {
       if (error instanceof z.ZodError) {
         res.status(400).json({
           error: 'بيانات غير صالحة',
-          details: error.errors.map((err: any) => ({
+          details: error.issues.map((err: any) => ({
             field: err.path.join('.'),
             message: err.message,
           })),

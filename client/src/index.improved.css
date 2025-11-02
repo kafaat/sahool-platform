@@ -1,0 +1,431 @@
+/**
+ * Sahool Platform - Professional Design System
+ * نظام تصميم احترافي لمنصة سَهول
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors - John Deere Green */
+    --primary-50: 240 253 244;
+    --primary-100: 220 252 231;
+    --primary-200: 187 247 208;
+    --primary-300: 134 239 172;
+    --primary-400: 74 222 128;
+    --primary-500: 54 124 43;    /* Main Primary */
+    --primary-600: 45 104 36;
+    --primary-700: 36 83 29;
+    --primary-800: 27 62 22;
+    --primary-900: 18 41 16;
+
+    /* Secondary Colors - Farmonaut Teal */
+    --secondary-50: 240 253 250;
+    --secondary-100: 204 251 241;
+    --secondary-200: 153 246 228;
+    --secondary-300: 94 234 212;
+    --secondary-400: 45 212 191;
+    --secondary-500: 0 191 165;  /* Main Secondary */
+    --secondary-600: 0 163 138;
+    --secondary-700: 0 135 111;
+    --secondary-800: 0 107 84;
+    --secondary-900: 0 79 57;
+
+    /* Accent Colors - Yellow */
+    --accent-50: 254 252 232;
+    --accent-100: 254 249 195;
+    --accent-200: 254 240 138;
+    --accent-300: 253 224 71;
+    --accent-400: 250 204 21;
+    --accent-500: 255 222 0;     /* Main Accent */
+    --accent-600: 217 188 0;
+    --accent-700: 179 154 0;
+    --accent-800: 141 120 0;
+    --accent-900: 103 86 0;
+
+    /* Neutral Colors */
+    --neutral-50: 250 250 250;
+    --neutral-100: 245 245 245;
+    --neutral-200: 229 229 229;
+    --neutral-300: 212 212 212;
+    --neutral-400: 163 163 163;
+    --neutral-500: 115 115 115;
+    --neutral-600: 82 82 82;
+    --neutral-700: 64 64 64;
+    --neutral-800: 38 38 38;
+    --neutral-900: 23 23 23;
+
+    /* Semantic Colors */
+    --success: 16 185 129;
+    --warning: 245 158 11;
+    --error: 239 68 68;
+    --info: 59 130 246;
+
+    /* Background & Foreground */
+    --background: 255 255 255;
+    --foreground: 23 23 23;
+
+    /* Card Colors */
+    --card: 255 255 255;
+    --card-foreground: 23 23 23;
+
+    /* Popover Colors */
+    --popover: 255 255 255;
+    --popover-foreground: 23 23 23;
+
+    /* Muted Colors */
+    --muted: 245 245 245;
+    --muted-foreground: 115 115 115;
+
+    /* Accent Colors for UI */
+    --accent: 245 245 245;
+    --accent-foreground: 23 23 23;
+
+    /* Border & Input */
+    --border: 229 229 229;
+    --input: 229 229 229;
+    --ring: 54 124 43;
+
+    /* Radius */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark Mode Colors */
+    --background: 23 23 23;
+    --foreground: 250 250 250;
+
+    --card: 38 38 38;
+    --card-foreground: 250 250 250;
+
+    --popover: 38 38 38;
+    --popover-foreground: 250 250 250;
+
+    --muted: 64 64 64;
+    --muted-foreground: 163 163 163;
+
+    --accent: 64 64 64;
+    --accent-foreground: 250 250 250;
+
+    --border: 64 64 64;
+    --input: 64 64 64;
+    --ring: 74 222 128;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+    direction: rtl;
+  }
+
+  /* Typography Improvements */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl lg:text-3xl;
+  }
+
+  h5 {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+
+  h6 {
+    @apply text-base md:text-lg lg:text-xl;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
+  }
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-400 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-500;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary-200 text-primary-900;
+  }
+
+  /* Focus Visible */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+}
+
+@layer components {
+  /* Container Improvements */
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Button Improvements */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary-500 text-white hover:bg-primary-600 shadow-sm hover:shadow-md;
+    @apply focus-visible:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary-500 text-white hover:bg-secondary-600 shadow-sm hover:shadow-md;
+    @apply focus-visible:ring-secondary-500;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-50;
+    @apply focus-visible:ring-primary-500;
+  }
+
+  .btn-ghost {
+    @apply text-neutral-700 hover:bg-neutral-100;
+  }
+
+  /* Card Improvements */
+  .card {
+    @apply bg-card text-card-foreground rounded-xl border border-border shadow-sm;
+    @apply transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer hover:shadow-xl hover:-translate-y-2 hover:border-primary-300;
+  }
+
+  /* Input Improvements */
+  .input {
+    @apply w-full rounded-lg border border-input bg-background px-4 py-2 text-sm;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply placeholder:text-muted-foreground;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-error {
+    @apply input border-error focus:ring-error;
+  }
+
+  /* Badge Improvements */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  /* Status Indicators */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+
+  .status-active {
+    @apply status-dot bg-green-500;
+  }
+
+  .status-idle {
+    @apply status-dot bg-yellow-500;
+  }
+
+  .status-error {
+    @apply status-dot bg-red-500;
+  }
+
+  .status-offline {
+    @apply status-dot bg-gray-500;
+  }
+
+  /* Loading States */
+  .skeleton {
+    @apply animate-pulse bg-neutral-200 rounded;
+  }
+
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-neutral-200 border-t-primary-500;
+  }
+
+  /* Empty States */
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-4 py-12 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 text-neutral-400;
+  }
+
+  .empty-state-title {
+    @apply text-xl font-semibold text-neutral-900;
+  }
+
+  .empty-state-description {
+    @apply text-sm text-neutral-600 max-w-md;
+  }
+}
+
+@layer utilities {
+  /* Text Utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Animation Utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Gradient Utilities */
+  .gradient-primary {
+    background: linear-gradient(135deg, rgb(var(--primary-500)) 0%, rgb(var(--primary-600)) 100%);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, rgb(var(--secondary-500)) 0%, rgb(var(--secondary-600)) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, rgb(var(--accent-400)) 0%, rgb(var(--accent-500)) 100%);
+  }
+
+  /* Glass Morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glass-dark {
+    background: rgba(23, 23, 23, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    @apply text-black bg-white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
