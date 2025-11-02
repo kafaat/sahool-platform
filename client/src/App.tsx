@@ -12,6 +12,7 @@ import Equipment from "./pages/Equipment";
 import Alerts from "./pages/Alerts";
 import WorkPlanner from "./pages/WorkPlanner";
 import LiveMonitoring from "./pages/LiveMonitoring";
+import DroneAnalysis from "./pages/DroneAnalysis";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/alerts"} component={Alerts} />
       <Route path={"/work-planner"} component={WorkPlanner} />
       <Route path={"/live-monitoring"} component={LiveMonitoring} />
+      <Route path={"/drone-analysis"} component={DroneAnalysis} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

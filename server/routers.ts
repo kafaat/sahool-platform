@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { droneImagesRouter } from "./routers/droneImages";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -103,6 +104,7 @@ async function verifyFieldOwnership(fieldId: number, userId: number) {
 
 export const appRouter = router({
   system: systemRouter,
+  droneImages: droneImagesRouter,
   
   // ===== Authentication =====
   auth: router({

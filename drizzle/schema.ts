@@ -121,3 +121,136 @@ export type Equipment = typeof equipment.$inferSelect;
 export type WorkPlan = typeof workPlans.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Alert = typeof alerts.$inferSelect;
+// ========================================
+// جداول نظام الاستشعار عن بعد (Remote Sensing System)
+// ========================================
+
+// جدول صور الطائرات بدون طيار
+export const droneImages = mysqlTable("droneImages", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  fieldId: int("fieldId"),
+  uploadedBy: int("uploadedBy").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileSize: int("fileSize").notNull(), // بالبايت
+  fileType: varchar("fileType", { length: 50 }).notNull(),
+  storagePath: varchar("storagePath", { length: 500 }).notNull(),
+  storageUrl: varchar("storageUrl", { length: 500 }),
+  captureDate: timestamp("captureDate"),
+  altitude: int("altitude"), // ارتفاع الطائرة (متر)
+  resolution: int("resolution"), // دقة الصورة (سم/بكسل)
+  gpsLatitude: varchar("gpsLatitude", { length: 50 }),
+  gpsLongitude: varchar("gpsLongitude", { length: 50 }),
+  status: mysqlEnum("status", ["uploaded", "processing", "completed", "failed"]).default("uploaded").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// جدول مهام المعالجة
+export const processingJobs = mysqlTable("processingJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  imageId: int("imageId").notNull(),
+  jobType: mysqlEnum("jobType", [
+    "ndvi",
+    "segmentation",
+    "object_detection",
+    "area_measurement",
+    "pest_detection",
+    "water_stress"
+  ]).notNull(),
+  status: mysqlEnum("status", ["queued", "processing", "completed", "failed"]).default("queued").notNull(),
+  progress: int("progress").default(0), // 0-100
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// جدول تحليلات NDVI
+export const ndviAnalysis = mysqlTable("ndviAnalysis", {
+  id: int("id").autoincrement().primaryKey(),
+  imageId: int("imageId").notNull(),
+  farmId: int("farmId").notNull(),
+  fieldId: int("fieldId"),
+  avgNdvi: varchar("avgNdvi", { length: 10 }), // قيمة عشرية كـ string
+  minNdvi: varchar("minNdvi", { length: 10 }),
+  maxNdvi: varchar("maxNdvi", { length: 10 }),
+  healthScore: int("healthScore"), // 0-100
+  mapImagePath: varchar("mapImagePath", { length: 500 }),
+  geoJsonPath: varchar("geoJsonPath", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// جدول مناطق NDVI
+export const ndviZones = mysqlTable("ndviZones", {
+  id: int("id").autoincrement().primaryKey(),
+  analysisId: int("analysisId").notNull(),
+  zoneType: mysqlEnum("zoneType", [
+    "very_poor",    // ضعيف جداً
+    "poor",         // ضعيف
+    "moderate",     // متوسط
+    "good",         // جيد
+    "excellent"     // ممتاز
+  ]).notNull(),
+  area: varchar("area", { length: 20 }), // المساحة بالهكتار
+  percentage: varchar("percentage", { length: 10 }), // نسبة من المساحة الكلية
+  geoJson: text("geoJson"), // حدود المنطقة (JSON)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// جدول حدود الحقول
+export const fieldBoundaries = mysqlTable("fieldBoundaries", {
+  id: int("id").autoincrement().primaryKey(),
+  fieldId: int("fieldId").notNull(),
+  imageId: int("imageId"),
+  boundary: text("boundary").notNull(), // GeoJSON Polygon
+  area: varchar("area", { length: 20 }).notNull(), // بالهكتار
+  perimeter: varchar("perimeter", { length: 20 }), // بالمتر
+  source: mysqlEnum("source", ["manual", "auto_detected", "gps"]).default("auto_detected").notNull(),
+  accuracy: varchar("accuracy", { length: 10 }), // دقة الكشف (%)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// جدول كشف الآفات
+export const pestDetections = mysqlTable("pestDetections", {
+  id: int("id").autoincrement().primaryKey(),
+  imageId: int("imageId").notNull(),
+  farmId: int("farmId").notNull(),
+  fieldId: int("fieldId"),
+  pestType: varchar("pestType", { length: 100 }),
+  severity: mysqlEnum("severity", ["low", "moderate", "high", "critical"]).notNull(),
+  affectedArea: varchar("affectedArea", { length: 20 }), // بالهكتار
+  confidence: varchar("confidence", { length: 10 }), // ثقة النموذج (%)
+  location: text("location"), // GeoJSON Point/Polygon
+  imageUrl: varchar("imageUrl", { length: 500 }), // صورة المنطقة المصابة
+  recommendations: text("recommendations"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// جدول إجهاد المياه
+export const waterStressAnalysis = mysqlTable("waterStressAnalysis", {
+  id: int("id").autoincrement().primaryKey(),
+  imageId: int("imageId").notNull(),
+  farmId: int("farmId").notNull(),
+  fieldId: int("fieldId"),
+  avgNdwi: varchar("avgNdwi", { length: 10 }), // NDWI متوسط
+  stressLevel: mysqlEnum("stressLevel", ["none", "low", "moderate", "high", "severe"]).notNull(),
+  affectedArea: varchar("affectedArea", { length: 20 }), // بالهكتار
+  mapImagePath: varchar("mapImagePath", { length: 500 }),
+  geoJsonPath: varchar("geoJsonPath", { length: 500 }),
+  recommendations: text("recommendations"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// أنواع مستنتجة للاستخدام في TypeScript
+export type DroneImage = typeof droneImages.$inferSelect;
+export type InsertDroneImage = typeof droneImages.$inferInsert;
+export type ProcessingJob = typeof processingJobs.$inferSelect;
+export type InsertProcessingJob = typeof processingJobs.$inferInsert;
+export type NdviAnalysis = typeof ndviAnalysis.$inferSelect;
+export type InsertNdviAnalysis = typeof ndviAnalysis.$inferInsert;
+export type NdviZone = typeof ndviZones.$inferSelect;
+export type FieldBoundary = typeof fieldBoundaries.$inferSelect;
+export type PestDetection = typeof pestDetections.$inferSelect;
+export type WaterStressAnalysis = typeof waterStressAnalysis.$inferSelect;

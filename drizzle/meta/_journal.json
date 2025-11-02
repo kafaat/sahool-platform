@@ -15,6 +15,13 @@
       "when": 1762095797739,
       "tag": "0001_grey_killraven",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1762124746243,
+      "tag": "0002_friendly_queen_noir",
+      "breakpoints": true
     }
   ]
 }

@@ -201,7 +201,61 @@
 - [ ] تحديث جميع العدادات بـ AnimatedCounter
 
 ### الاختبار والنشر
-- [ ] اختبار شامل لجميع الصفحات
+- [x] اختبار شامل لجميع الصفحات
 - [ ] اختبار الأداء
 - [ ] اختبار التوافق
+- [x] حفظ checkpoint نهائي (5a406c32)
+
+
+## المرحلة 15: نظام الاستشعار عن بعد (Remote Sensing System)
+
+### إعداد قاعدة البيانات
+- [x] إضافة جدول drone_images
+- [x] إضافة جدول processing_jobs
+- [x] إضافة جدول ndvi_analysis
+- [x] إضافة جدول ndvi_zones
+- [x] إضافة جدول field_boundaries
+- [x] إضافة جدول pest_detections
+- [x] إضافة جدول water_stress_analysis
+- [x] تشغيل migrations
+
+### نظام رفع الصور
+- [x] تطوير DroneImageUploader.tsx
+- [ ] تطوير ImageProcessingQueue.tsx
+- [ ] تطوير ProcessingProgress.tsx
+- [x] تطوير droneImages router (tRPC)
+- [x] تطوير upload procedure
+- [x] تطوير getProcessingStatus procedure
+- [x] تطوير getAnalysisResults procedure
+
+### خرائط NDVI
+- [ ] تطوير NDVIMap.tsx
+- [ ] تطوير NDVILegend.tsx
+- [ ] تطوير NDVIStats.tsx
+- [ ] تطوير NDVIComparison.tsx
+- [ ] تطوير ndvi router (tRPC)
+- [ ] تطوير calculate procedure
+- [ ] تطوير getMap procedure
+
+### قياس المساحات
+- [ ] تطوير FieldBoundaryMap.tsx
+- [ ] تطوير FieldBoundaryEditor.tsx
+- [ ] تطوير AreaCalculator.tsx
+- [ ] تطوير fields router (tRPC)
+- [ ] تطوير detectBoundaries procedure
+- [ ] تطوير calculateArea procedure
+
+### كشف الآفات
+- [ ] تطوير PestDetectionMap.tsx
+- [ ] تطوير PestDetails.tsx
+- [ ] تطوير PestRecommendations.tsx
+- [ ] تطوير pests router (tRPC)
+- [ ] تطوير detect procedure
+- [ ] تطوير getRecommendations procedure
+
+### الصفحة الرئيسية
+- [x] تطوير DroneAnalysis.tsx (الصفحة الرئيسية)
+- [x] إضافة route في App.tsx
+- [x] إضافة navigation في DashboardLayout
+- [ ] اختبار شامل
 - [ ] حفظ checkpoint نهائي
