@@ -290,17 +290,20 @@
 ## المرحلة 17: نظام YOLO للكشف عن أمراض المحاصيل
 
 ### قاعدة البيانات
-- [ ] إضافة جدول disease_detections
-- [ ] إضافة جدول detected_diseases
-- [ ] إضافة جدول disease_database
-- [ ] تشغيل migrations
+- [x] إضافة جدول disease_detections
+- [x] إضافة جدول detected_diseases
+- [x] إضافة جدول disease_database
+- [x] تشغيل migrations
 
 ### tRPC Routers
-- [ ] تطوير diseaseDetection router
-- [ ] تطوير uploadImage procedure
-- [ ] تطوير getResults procedure
-- [ ] تطوير getDiseaseInfo procedure
-- [ ] تطوير simulateYOLO procedure
+- [x] تطوير diseaseDetection router
+- [x] تطوير uploadImage procedure
+- [x] تطوير getResults procedure
+- [x] تطوير getDiseaseInfo procedure
+- [x] تطوير simulateYOLO procedure
+- [x] تطوير getHistory procedure
+- [x] تطوير getAllDiseases procedure
+- [x] تطوير getStatistics procedure
 
 ### قاعدة بيانات الأمراض
 - [ ] إضافة 30+ مرض للطماطم
@@ -310,14 +313,47 @@
 - [ ] إضافة أمراض التفاح
 
 ### مكونات UI
-- [ ] تطوير DiseaseDetectionUploader.tsx
-- [ ] تطوير DiseaseResults.tsx
-- [ ] تطوير DiseaseInfoModal.tsx
-- [ ] تطوير DiseaseHistory.tsx
+- [x] تطوير DiseaseDetectionUploader.tsx
+- [x] تطوير DetectionResults.tsx
+- [x] تطوير DetectionHistory.tsx
+- [x] تطوير DiseaseDatabase.tsx
 
 ### الصفحة الرئيسية
-- [ ] تطوير DiseaseDetection.tsx
-- [ ] إضافة route في App.tsx
-- [ ] إضافة navigation في DashboardLayout
-- [ ] اختبار شامل
+- [x] تطوير DiseaseDetection.tsx
+- [x] إضافة route في App.tsx
+- [x] إضافة navigation في DashboardLayout
+- [x] اختبار شامل
+- [x] حفظ checkpoint نهائي (5d1e25ae)
+
+
+## المرحلة 18: تحسينات AgriVision AI الشاملة
+
+### المرحلة 1: تحسين نظام YOLO
+- [ ] إضافة 20 مرض إضافي (المجموع 30)
+- [ ] تحسين محاكاة YOLO
+- [ ] إضافة معلومات تفصيلية للأمراض
+- [ ] إضافة صور توضيحية
+
+### المرحلة 2: نظام التنبؤ بالإنتاج
+- [ ] إضافة جداول yield_predictions & historical_yields
+- [ ] تطوير yieldPrediction router
+- [ ] إنشاء YieldPredictionCard & YieldHistoryChart
+- [ ] إضافة صفحة YieldPrediction
+
+### المرحلة 3: مراقبة الطقس المتقدمة
+- [ ] إضافة جداول weather_data & weather_alerts
+- [ ] تطوير weather router
+- [ ] إنشاء WeatherDashboard & WeatherAlerts
+- [ ] تكامل مع API طقس
+
+### المرحلة 4: نظام التوصيات الذكية
+- [ ] إضافة جدول ai_recommendations
+- [ ] تطوير recommendations router
+- [ ] إنشاء RecommendationCard & RecommendationsList
+- [ ] تكامل مع جميع الأنظمة
+
+### المرحلة 5: التقرير النهائي
+- [ ] إنشاء تقرير شامل
+- [ ] توثيق جميع الميزات
+- [ ] إنشاء دليل المستخدم
 - [ ] حفظ checkpoint نهائي
