@@ -161,7 +161,7 @@ export default function Farms() {
       const previousFarms = utils.farms.list.getData();
 
       utils.farms.list.setData(undefined, (old) =>
-        old?.filter((farm) => farm.id !== deletedId.id)
+        old?.filter((farm) => farm.id !== deletedId.farmId)
       );
 
       return { previousFarms };
@@ -210,7 +210,7 @@ export default function Farms() {
   // تحسين 8: استخدام useCallback
   const handleDelete = useCallback(
     (id: number) => {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ farmId: id });
     },
     [deleteMutation]
   );

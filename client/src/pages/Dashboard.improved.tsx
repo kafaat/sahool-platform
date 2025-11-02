@@ -73,7 +73,7 @@ function DashboardSkeleton() {
 }
 
 // تحسين 4: مكون Error منفصل
-function DashboardError({ error, onRetry }: { error: Error; onRetry: () => void }) {
+function DashboardError({ error, onRetry }: { error: any; onRetry: () => void }) {
   return (
     <Card className="border-red-200 bg-red-50">
       <CardHeader>
