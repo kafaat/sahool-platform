@@ -21,11 +21,36 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane, Microscope, Satellite, Zap, CloudSun } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane, Microscope, Satellite, Zap, CloudSun, Moon, Sun, Wind, SunMedium } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
+
+// Theme Switcher Component
+function ThemeSwitcher() {
+  const { theme, toggleTheme } = useTheme();
+  
+  return (
+    <DropdownMenuItem
+      onClick={toggleTheme}
+      className="cursor-pointer"
+    >
+      {theme === 'dark' ? (
+        <>
+          <Sun className="mr-2 h-4 w-4" />
+          <span>الوضع النهاري</span>
+        </>
+      ) : (
+        <>
+          <Moon className="mr-2 h-4 w-4" />
+          <span>الوضع الليلي</span>
+        </>
+      )}
+    </DropdownMenuItem>
+  );
+}
 
 const menuItems = [
   { icon: LayoutDashboard, label: "لوحة التحكم", path: "/dashboard" },
@@ -38,6 +63,9 @@ const menuItems = [
   { icon: Activity, label: "المراقبة المباشرة", path: "/live-monitoring" },
   { icon: Bell, label: "التنبيهات", path: "/alerts" },
   { icon: CloudSun, label: "الطقس", path: "/weather" },
+  { icon: CloudSun, label: "الطقس المتقدم", path: "/advanced-weather" },
+  { icon: Wind, label: "جودة الهواء", path: "/air-quality" },
+  { icon: SunMedium, label: "الطاقة الشمسية", path: "/solar-energy" },
   { icon: Zap, label: "المحاكي الشامل", path: "/simulator" },
 ];
 
@@ -259,6 +287,7 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <ThemeSwitcher />
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"

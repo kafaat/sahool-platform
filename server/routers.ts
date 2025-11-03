@@ -8,6 +8,9 @@ import { workPlannerRouter } from "./routers/workPlanner";
 import { satelliteImagesRouter } from "./routers/satelliteImages";
 import { simulatorRouter } from "./routers/simulator";
 import { weatherRouter } from "./routers/weather";
+import { openMeteoRouter } from "./routers/openMeteo";
+import { airQualityRouter } from "./routers/airQuality";
+import { solarEnergyRouter } from "./routers/solarEnergy";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -118,6 +121,9 @@ export const appRouter = router({
   satelliteImages: satelliteImagesRouter,
   simulator: simulatorRouter,
   weather: weatherRouter,
+  openMeteo: openMeteoRouter,
+  airQuality: airQualityRouter,
+  solarEnergy: solarEnergyRouter,
   
   // ===== Authentication =====
   auth: router({

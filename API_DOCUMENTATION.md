@@ -2,7 +2,7 @@
 
 **منصة سَهول - الواجهات المحسّنة**
 
-**الإصدار:** 2.0  
+**الإصدار:** 2.2  
 **التاريخ:** نوفمبر 2025  
 **المؤلف:** Manus AI
 
@@ -1382,11 +1382,459 @@ OPENWEATHER_API_KEY=your-api-key
 
 ---
 
+## 15. Open-Meteo API (الطقس المجاني المتقدم)
+
+### نظرة عامة
+
+**Open-Meteo** هو API مجاني بالكامل للطقس بدون حاجة لمفتاح API. يوفر بيانات طقس حالية، توقعات 16 يوماً، بيانات تاريخية، ومؤشرات زراعية متقدمة.
+
+### الميزات
+
+- ✅ **مجاني 100%** - لا يحتاج API key
+- ✅ **توقعات 16 يوماً** - أطول من OpenWeatherMap
+- ✅ **بيانات تاريخية** - منذ 1940
+- ✅ **مؤشرات زراعية** - GDD, ET0, رطوبة التربة
+- ✅ **Redis Caching** - 10 دقائق (حالي)، ساعة (توقعات)
+
+### Procedures
+
+#### `openMeteo.getCurrentWeather`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على الطقس الحالي
+
+**المدخلات:**
+```typescript
+{
+  lat: number;   // خط العرض
+  lon: number;   // خط الطول
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  temperature: number;        // درجة الحرارة (°C)
+  feelsLike: number;         // الحرارة المحسوسة
+  humidity: number;          // الرطوبة (%)
+  windSpeed: number;         // سرعة الرياح (km/h)
+  windDirection: number;     // اتجاه الرياح (درجة)
+  precipitation: number;     // الأمطار (mm)
+  cloudCover: number;        // الغيوم (%)
+  pressure: number;          // الضغط (hPa)
+  weatherCode: number;       // رمز الطقس
+  weatherDescription: string; // وصف بالعربية
+  time: string;              // الوقت
+}
+```
+
+**مثال:**
+```typescript
+const weather = await trpc.openMeteo.getCurrentWeather.useQuery({
+  lat: 24.7136,
+  lon: 46.6753,
+});
+
+console.log(`درجة الحرارة: ${weather.temperature}°C`);
+console.log(`الرطوبة: ${weather.humidity}%`);
+```
+
+#### `openMeteo.getForecast`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** توقعات 16 يوماً
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  days?: number;  // عدد الأيام (1-16)، الافتراضي: 7
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  forecast: Array<{
+    date: string;
+    tempMax: number;
+    tempMin: number;
+    precipitation: number;
+    precipitationProbability: number;
+    windSpeed: number;
+    weatherCode: number;
+    weatherDescription: string;
+  }>;
+}
+```
+
+#### `openMeteo.getHistoricalData`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** بيانات تاريخية (منذ 1940)
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  startDate: string;  // YYYY-MM-DD
+  endDate: string;    // YYYY-MM-DD
+}
+```
+
+#### `openMeteo.getAgriculturalIndices`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** مؤشرات زراعية متقدمة
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  days?: number;  // 1-16
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  current: {
+    gdd: number;              // Growing Degree Days
+    et0: number;              // Evapotranspiration
+    soilMoisture: number;     // رطوبة التربة
+    soilTemperature: number;  // حرارة التربة
+  };
+  forecast: Array<{
+    date: string;
+    gdd: number;
+    et0: number;
+    // ...
+  }>;
+}
+```
+
+#### `openMeteo.getWeatherAlerts`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** تنبيهات الطقس الذكية
+
+**المخرجات:**
+```typescript
+{
+  alerts: Array<{
+    type: 'extreme_heat' | 'frost' | 'heavy_rain' | 'strong_wind' | 'drought';
+    severity: 'high' | 'medium' | 'low';
+    title: string;
+    message: string;
+    recommendation: string;
+  }>;
+}
+```
+
+#### `openMeteo.getFarmWeather`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** طقس مزرعة شامل (حالي + توقعات + مؤشرات + تنبيهات)
+
+**المدخلات:**
+```typescript
+{
+  farmId: number;
+  days?: number;  // 1-16
+}
+```
+
+### المؤشرات الزراعية
+
+| المؤشر | الوصف | الوحدة | الاستخدام |
+|---------|---------|---------|----------|
+| **GDD** | Growing Degree Days | °C | تتبع نمو المحاصيل |
+| **ET0** | Evapotranspiration | mm | حساب احتياجات الري |
+| **Soil Moisture** | رطوبة التربة | m³/m³ | جدولة الري |
+| **Soil Temp** | حرارة التربة | °C | وقت الزراعة |
+
+### Best Practices
+
+**Caching:** الطقس الحالي 10 دقائق، التوقعات ساعة، التاريخي 24 ساعة.
+
+**التحديث التلقائي:** `refetchInterval: 600000` (10 دقائق).
+
+**لا API Key:** مجاني بالكامل بدون تسجيل.
+
+---
+
+## 16. IQAir API (جودة الهواء)
+
+### نظرة عامة
+
+**IQAir** يوفر بيانات جودة الهواء العالمية مع تحليل تأثيرها على المحاصيل والعمال.
+
+### الميزات
+
+- ✅ **AQI عالمي** - مؤشر جودة الهواء
+- ✅ **6 ملوثات** - PM2.5, PM10, O₃, NO₂, SO₂, CO
+- ✅ **تأثير المحاصيل** - تحليل مخصص
+- ✅ **توصيات** - رش، ري، حصاد، عمال
+- ✅ **Redis Caching** - 30 دقيقة
+
+### Procedures
+
+#### `airQuality.getCurrentAirQuality`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** جودة الهواء الحالية
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  location: { city, state, country };
+  airQuality: {
+    aqi: number;              // 0-500
+    mainPollutant: string;    // pm25, pm10, o3, etc.
+    level: string;            // جيد، معتدل، سيء
+    color: string;            // green, yellow, red
+    description: string;      // وصف بالعربية
+  };
+  pollutants: {
+    pm25: number;
+    pm10: number;
+    o3: number;
+    no2: number;
+    so2: number;
+    co: number;
+  };
+}
+```
+
+#### `airQuality.getFarmAirQuality`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** جودة الهواء لمزرعة مع تحليل التأثير
+
+**المدخلات:**
+```typescript
+{
+  farmId: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  // ... (نفس getCurrentAirQuality)
+  cropImpact: Array<{
+    pollutant: string;
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+    recommendation: string;
+  }>;
+  recommendations: {
+    farmWorkers: string;   // توصيات للعمال
+    spraying: string;      // ملاءمة الرش
+    irrigation: string;    // توصيات الري
+    harvesting: string;    // توصيات الحصاد
+  };
+  alerts: Array<{
+    severity: 'high' | 'medium' | 'low';
+    title: string;
+    message: string;
+  }>;
+}
+```
+
+#### `airQuality.getPollutantInfo`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** معلومات تفصيلية عن ملوث
+
+**المدخلات:**
+```typescript
+{
+  pollutant: 'pm25' | 'pm10' | 'o3' | 'no2' | 'so2' | 'co';
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  name: string;
+  description: string;
+  sources: string[];           // مصادر التلوث
+  healthEffects: string;       // التأثيرات الصحية
+  cropEffects: string;         // التأثير على المحاصيل
+  safeLevel: number;           // المستوى الآمن
+  recommendations: string[];   // توصيات
+  sensitiveCrops?: string[];   // محاصيل حساسة
+}
+```
+
+### Setup
+
+1. زيارة [IQAir API](https://www.iqair.com/air-pollution-data-api)
+2. إنشاء حساب والحصول على API key
+3. في Settings → Secrets: `IQAIR_API_KEY=your-key`
+
+### Best Practices
+
+**Caching:** 30 دقيقة للبيانات الحالية.
+
+**التحديث:** `refetchInterval: 1800000` (30 دقيقة).
+
+**التنبيهات:** مراقبة AQI > 150 للتنبيهات العاجلة.
+
+---
+
+## 17. PVWatts API (الطاقة الشمسية)
+
+### نظرة عامة
+
+**PVWatts** (NREL) يحسب إمكانيات الطاقة الشمسية والعائد على الاستثمار للمزارع.
+
+### الميزات
+
+- ✅ **حساب الإنتاج** - kWh سنوي
+- ✅ **التوفير** - حساب التوفير المالي
+- ✅ **ROI** - العائد على الاستثمار
+- ✅ **توصيات** - حجم النظام، الموضع
+- ✅ **Redis Caching** - ساعة
+
+### Procedures
+
+#### `solarEnergy.calculateSolarPotential`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** حساب إمكانيات الطاقة الشمسية
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  systemCapacity: number;  // kW
+  moduleType?: 0 | 1 | 2;  // 0=Standard, 1=Premium, 2=Thin film
+  arrayType?: 0 | 1 | 2 | 3 | 4;  // 0=Fixed, 1=1-axis, 2=2-axis, etc.
+  tilt?: number;           // زاوية الميل (درجة)
+  azimuth?: number;        // الاتجاه (180=جنوب)
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  annualProduction: number;     // kWh/سنة
+  monthlyProduction: number[];  // kWh/شهر
+  capacityFactor: number;       // %
+  annualSavings: number;        // $
+  monthlySavings: number;       // $
+  co2Reduction: number;         // طن/سنة
+}
+```
+
+#### `solarEnergy.calculateSavings`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** حساب التوفير والعائد
+
+**المدخلات:**
+```typescript
+{
+  annualProduction: number;        // kWh
+  electricityRate: number;         // $/kWh
+  systemCost: number;              // $
+  incentives?: number;             // $
+  maintenanceCost?: number;        // $/سنة
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  annualSavings: number;           // $
+  paybackPeriod: number;           // سنوات
+  roi: number;                     // %
+  lifetimeSavings: number;         // $ (25 سنة)
+  netPresentValue: number;         // $
+}
+```
+
+#### `solarEnergy.getFarmRecommendations`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** توصيات شاملة للمزرعة
+
+**المدخلات:**
+```typescript
+{
+  farmId: number;
+  farmArea: number;                // هكتار
+  monthlyElectricityBill: number;  // $
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  solarPotential: { ... };         // من calculateSolarPotential
+  analysis: {
+    recommendedSystemSize: number; // kW
+    maxSystemSize: number;         // kW
+    coveragePercentage: number;    // %
+  };
+  recommendations: {
+    systemType: string;            // نوع النظام
+    reason: string;                // السبب
+    placement: string[];           // مواضع مقترحة
+    considerations: string[];      // اعتبارات
+    benefits: string[];            // الفوائد
+  };
+  nextSteps: string[];             // الخطوات التالية
+}
+```
+
+### Setup
+
+1. زيارة [NREL Developer Network](https://developer.nrel.gov/)
+2. إنشاء حساب والحصول على API key
+3. في Settings → Secrets: `NREL_API_KEY=your-key`
+
+### Best Practices
+
+**Caching:** ساعة للحسابات.
+
+**الدقة:** استخدم إحداثيات GPS دقيقة للمزرعة.
+
+**التحديث:** لا حاجة للتحديث التلقائي (بيانات ثابتة).
+
+---
+
 ## الخلاصة
 
 توفر منصة سَهول واجهة برمجة تطبيقات شاملة ومُحسّنة تدعم جميع ميزات المنصة. تتميز الواجهة بالأمان والأداء العالي والتوثيق الشامل، مما يجعلها مناسبة للتطبيقات الإنتاجية.
 
-### الميزات الجديدة في الإصدار 2.0
+### الميزات الجديدة في الإصدار 2.2
 
 - ✅ **Dashboard API**: إحصائيات شاملة ورسوم بيانية
 - ✅ **Redis Caching**: تحسين الأداء بنسبة 80%
@@ -1394,6 +1842,9 @@ OPENWEATHER_API_KEY=your-api-key
 - ✅ **Cache Invalidation**: إلغاء تلقائي عند التحديث
 - ✅ **Sentinel Hub Integration**: صور أقمار صناعية مع NDVI
 - ✅ **Weather API**: طقس حالي وتوقعات ومؤشرات زراعية
+- ✅ **Open-Meteo API**: طقس مجاني متقدم (16 يوم توقعات + بيانات تاريخية)
+- ✅ **IQAir API**: جودة الهواء مع تحليل التأثير على المحاصيل
+- ✅ **PVWatts API**: حساب إمكانيات الطاقة الشمسية والعائد
 
 ---
 

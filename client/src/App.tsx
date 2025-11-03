@@ -17,6 +17,9 @@ import DiseaseDetection from "./pages/DiseaseDetection";
 import SatelliteImages from "./pages/SatelliteImages";
 import Simulator from "./pages/Simulator";
 import Weather from "./pages/Weather";
+import AdvancedWeather from "./pages/AdvancedWeather";
+import AirQuality from "./pages/AirQuality";
+import SolarEnergy from "./pages/SolarEnergy";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -35,6 +38,9 @@ function Router() {
       <Route path={"/satellite-images"} component={SatelliteImages} />
       <Route path={"/simulator"} component={Simulator} />
       <Route path={"/weather"} component={Weather} />
+      <Route path={"/advanced-weather"} component={AdvancedWeather} />
+      <Route path={"/air-quality"} component={AirQuality} />
+      <Route path={"/solar-energy"} component={SolarEnergy} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route path="/:rest*" component={NotFound} />
@@ -52,7 +58,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider
         defaultTheme="light"
-        // switchable
+        switchable
       >
         <TooltipProvider>
           <Toaster />
