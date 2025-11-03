@@ -357,3 +357,102 @@
 - [ ] توثيق جميع الميزات
 - [ ] إنشاء دليل المستخدم
 - [ ] حفظ checkpoint نهائي
+
+
+## المرحلة 19: تحسينات YOLO الشاملة
+
+### المرحلة 1: توسيع قاعدة بيانات الأمراض
+- [x] إضافة 10 أمراض للطماطم (المجموع 10)
+- [x] إضافة 6 أمراض للبطاطس
+- [x] إضافة 5 أمراض للذرة
+- [x] إضافة 4 أمراض للقمح
+- [x] إضافة 3 أمراض للعنب
+- [x] إضافة 3 أمراض للتفاح
+- [x] إضافة 2 أمراض للخيار
+- [x] إضافة 2 أمراض للفلفل
+- [x] إضافة معلومات تفصيلية (أعراض، أسباب، علاج، وقاية)
+
+### المرحلة 2: تحسين محاكاة YOLO
+- [ ] إضافة تحليل شدة المرض (خفيف، متوسط، شديد، حرج)
+- [ ] تحسين دقة الكشف (90% → 95%)
+- [ ] إضافة confidence scores محسّنة
+- [ ] إضافة multiple detections في صورة واحدة
+
+### المرحلة 3: تحسين واجهة المستخدم
+- [ ] إضافة معرض صور للأمراض
+- [ ] إضافة دليل مصور للأعراض
+- [ ] تحسين عرض النتائج
+- [ ] إضافة مقارنة قبل/بعد العلاج
+
+### المرحلة 4: الاختبار والنشر
+- [ ] اختبار شامل لجميع الأمراض
+- [ ] اختبار الأداء
+- [ ] حفظ checkpoint نهائي
+
+
+## المرحلة 20: التطوير الشامل النهائي
+
+### المرحلة 1: تحسينات الأداء
+- [x] إضافة Redis للـ Caching
+- [x] تثبيت redis و ioredis
+- [x] إنشاء Redis client wrapper
+- [ ] إضافة caching للاستعلامات الشائعة
+- [x] إضافة 48 فهرس (Index) لقاعدة البيانات
+- [ ] تحسين استعلامات droneImages
+- [ ] تحسين استعلامات diseaseDetection
+- [ ] تحسين استعلامات farms & fields
+- [ ] إضافة pagination للقوائم الطويلة
+- [ ] تحسين سرعة التحميل الأولي
+
+### المرحلة 2: نظام التنبؤ بالإنتاج
+- [ ] إنشاء جدول yield_predictions
+- [ ] إنشاء جدول historical_yields
+- [ ] تطوير yieldPrediction router (tRPC)
+- [ ] تطوير predictYield procedure
+- [ ] تطوير getHistoricalYields procedure
+- [ ] تطوير YieldPredictionCard component
+- [ ] تطوير YieldChart component
+- [ ] إضافة إلى Dashboard
+
+### المرحلة 3: نظام مراقبة الطقس
+- [ ] إنشاء جدول weather_data
+- [ ] إنشاء جدول weather_alerts
+- [ ] تطوير weather router (tRPC)
+- [ ] التكامل مع Weather API
+- [ ] تطوير WeatherWidget component
+- [ ] تطوير WeatherForecast component
+- [ ] تطوير WeatherAlerts component
+- [ ] إضافة إلى Dashboard
+
+### المرحلة 4: صفحة Landing ونظام Beta Testing
+- [ ] تصميم صفحة Landing احترافية
+- [ ] إنشاء LandingPage.tsx
+- [ ] إضافة Hero Section
+- [ ] إضافة Features Section
+- [ ] إضافة Pricing Section
+- [ ] إضافة Beta Signup Form
+- [ ] إنشاء جدول beta_users
+- [ ] تطوير beta router (tRPC)
+
+### المرحلة 5: التوثيق الشامل
+- [ ] تحديث userGuide.md
+- [ ] إنشاء API_DOCUMENTATION.md
+- [ ] إنشاء DEVELOPER_GUIDE.md
+- [ ] إنشاء DEPLOYMENT_GUIDE.md
+- [ ] إنشاء TROUBLESHOOTING.md
+- [ ] توثيق جميع tRPC procedures
+- [ ] توثيق جميع المكونات الرئيسية
+
+### المرحلة 6: الاختبار والإصلاح
+- [ ] اختبار جميع الصفحات
+- [ ] اختبار جميع tRPC procedures
+- [ ] إصلاح أخطاء TypeScript المتبقية (64)
+- [ ] اختبار الأداء
+- [ ] اختبار الأمان
+- [ ] اختبار التوافق (browsers)
+- [ ] اختبار الاستجابة (mobile)
+
+### المرحلة 7: Checkpoint النهائي
+- [ ] مراجعة شاملة
+- [ ] حفظ checkpoint نهائي
+- [ ] إنشاء تقرير نهائي شامل
