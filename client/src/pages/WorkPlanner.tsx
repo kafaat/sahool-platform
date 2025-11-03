@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Calendar, Plus, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Calendar, Plus, CheckCircle, Clock, XCircle, Sparkles, TrendingUp, AlertTriangle, Droplet, Bug } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const statusColors = {
   draft: "bg-gray-500",
@@ -25,13 +26,35 @@ const statusLabels = {
   cancelled: "ملغي",
 };
 
+const priorityColors = {
+  low: "bg-gray-100 text-gray-800 border-gray-300",
+  medium: "bg-blue-100 text-blue-800 border-blue-300",
+  high: "bg-orange-100 text-orange-800 border-orange-300",
+  urgent: "bg-red-100 text-red-800 border-red-300",
+};
+
+const priorityLabels = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "عالية",
+  urgent: "عاجلة",
+};
+
+const timeframeLabels = {
+  urgent: "عاجل (خلال 24 ساعة)",
+  this_week: "هذا الأسبوع",
+  this_month: "هذا الشهر",
+};
+
 export default function WorkPlanner() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<number | null>(null);
   const [planName, setPlanName] = useState("");
   const [cropType, setCropType] = useState("");
   const [season, setSeason] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [aiRecommendations, setAiRecommendations] = useState<any>(null);
 
   const { data: farms } = trpc.farms.list.useQuery();
   const [selectedFarmId, setSelectedFarmId] = useState<number | null>(null);
@@ -41,7 +64,7 @@ export default function WorkPlanner() {
     { enabled: selectedFarmId !== null }
   );
 
-  const { data: workPlans, isLoading } = trpc.workPlans.list.useQuery(
+  const { data: workPlans, isLoading } = trpc.workPlanner.list.useQuery(
     { fieldId: selectedFieldId! },
     { enabled: selectedFieldId !== null }
   );
@@ -51,12 +74,39 @@ export default function WorkPlanner() {
   const createWorkPlan = trpc.workPlans.create.useMutation({
     onSuccess: () => {
       toast.success("تم إنشاء خطة العمل بنجاح");
-      utils.workPlans.list.invalidate();
+      utils.workPlanner.list.invalidate();
       setIsDialogOpen(false);
       setPlanName("");
       setCropType("");
       setSeason("");
       setStartDate("");
+    },
+    onError: (error) => {
+      toast.error("فشل إنشاء خطة العمل: " + error.message);
+    },
+  });
+
+  const generateAIRecommendations = trpc.workPlanner.generateAIRecommendations.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setAiRecommendations(data);
+        setIsAIDialogOpen(true);
+        toast.success("تم توليد التوصيات الذكية بنجاح");
+      } else {
+        toast.error(data.message);
+      }
+    },
+    onError: (error) => {
+      toast.error("فشل توليد التوصيات: " + error.message);
+    },
+  });
+
+  const createFromRecommendations = trpc.workPlanner.createFromRecommendations.useMutation({
+    onSuccess: (data) => {
+      toast.success(`تم إنشاء خطة عمل مع ${data.tasksCreated} مهمة`);
+      utils.workPlanner.list.invalidate();
+      setIsAIDialogOpen(false);
+      setAiRecommendations(null);
     },
     onError: (error) => {
       toast.error("فشل إنشاء خطة العمل: " + error.message);
@@ -87,6 +137,27 @@ export default function WorkPlanner() {
     });
   };
 
+  const handleGenerateAI = () => {
+    if (!selectedFieldId || !selectedFarmId) {
+      toast.error("يجب اختيار مزرعة وحقل");
+      return;
+    }
+    generateAIRecommendations.mutate({
+      fieldId: selectedFieldId,
+      farmId: selectedFarmId,
+    });
+  };
+
+  const handleCreateFromAI = () => {
+    if (!selectedFieldId || !aiRecommendations) {
+      return;
+    }
+    createFromRecommendations.mutate({
+      fieldId: selectedFieldId,
+      recommendations: aiRecommendations.recommendations,
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -97,95 +168,134 @@ export default function WorkPlanner() {
               تخطيط وإدارة الأنشطة الزراعية الموسمية
             </p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} disabled={!selectedFieldId}>
-            <Plus className="h-4 w-4 ml-2" />
-            إنشاء خطة عمل
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleGenerateAI}
+              disabled={!selectedFieldId || generateAIRecommendations.isPending}
+              variant="outline"
+              className="gap-2"
+            >
+              {generateAIRecommendations.isPending ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  جاري التحليل...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  توصيات ذكية بالـ AI
+                </>
+              )}
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)} disabled={!selectedFieldId}>
+              <Plus className="h-4 w-4 ml-2" />
+              خطة عمل جديدة
+            </Button>
+          </div>
         </div>
 
-        {farms && farms.length > 0 && (
-          <div className="space-y-2">
-            <Label>اختر المزرعة</Label>
-            <div className="flex gap-2 flex-wrap">
-              {farms.map((farm) => (
-                <Button
-                  key={farm.id}
-                  variant={selectedFarmId === farm.id ? "default" : "outline"}
-                  onClick={() => {
-                    setSelectedFarmId(farm.id);
-                    setSelectedFieldId(null);
-                  }}
-                >
-                  {farm.name}
-                </Button>
-              ))}
-            </div>
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>المزرعة</Label>
+            <Select
+              value={selectedFarmId?.toString()}
+              onValueChange={(value) => {
+                setSelectedFarmId(parseInt(value));
+                setSelectedFieldId(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="اختر المزرعة" />
+              </SelectTrigger>
+              <SelectContent>
+                {farms?.map((farm) => (
+                  <SelectItem key={farm.id} value={farm.id.toString()}>
+                    {farm.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
 
-        {fields && fields.length > 0 && (
-          <div className="space-y-2">
-            <Label>اختر الحقل</Label>
-            <div className="flex gap-2 flex-wrap">
-              {fields.map((field) => (
-                <Button
-                  key={field.id}
-                  variant={selectedFieldId === field.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedFieldId(field.id)}
-                >
-                  {field.name}
-                </Button>
-              ))}
-            </div>
+          <div>
+            <Label>الحقل</Label>
+            <Select
+              value={selectedFieldId?.toString()}
+              onValueChange={(value) => setSelectedFieldId(parseInt(value))}
+              disabled={!selectedFarmId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="اختر الحقل" />
+              </SelectTrigger>
+              <SelectContent>
+                {fields?.map((field) => (
+                  <SelectItem key={field.id} value={field.id.toString()}>
+                    {field.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
 
-        {!farms || farms.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد مزارع</h3>
-              <p className="text-sm text-muted-foreground">
-                يجب إضافة مزرعة وحقل أولاً
-              </p>
-            </CardContent>
-          </Card>
-        ) : !fields || fields.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد حقول</h3>
-              <p className="text-sm text-muted-foreground">
-                يجب إضافة حقل للمزرعة أولاً
-              </p>
-            </CardContent>
-          </Card>
-        ) : isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {[1, 2].map((i) => (
-              <Card key={i} className="animate-pulse">
+        {/* Work Plans List */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
                 <CardHeader>
-                  <div className="h-6 bg-muted rounded w-3/4"></div>
+                  <Skeleton className="h-6 w-1/3" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-4 bg-muted rounded w-full"></div>
+                  <Skeleton className="h-20 w-full" />
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : workPlans && workPlans.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {workPlans.map((plan) => (
-              <Card key={plan.id} className="hover:shadow-lg transition-shadow">
+        ) : !selectedFieldId ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">اختر حقلاً لعرض خطط العمل</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                قم باختيار مزرعة وحقل من الأعلى
+              </p>
+            </CardContent>
+          </Card>
+        ) : workPlans && workPlans.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">لا توجد خطط عمل</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                ابدأ بإنشاء خطة عمل جديدة أو استخدم التوصيات الذكية
+              </p>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={handleGenerateAI} variant="outline" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  توصيات ذكية
+                </Button>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  خطة جديدة
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {workPlans?.map((plan) => (
+              <Card key={plan.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        {plan.name}
-                      </CardTitle>
-                      <CardDescription>{plan.cropType || "محصول غير محدد"}</CardDescription>
+                    <div>
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription className="mt-2">
+                        {plan.cropType && `المحصول: ${plan.cropType}`}
+                        {plan.season && ` • الموسم: ${plan.season}`}
+                      </CardDescription>
                     </div>
                     <Badge className={statusColors[plan.status as keyof typeof statusColors]}>
                       {statusLabels[plan.status as keyof typeof statusLabels]}
@@ -193,21 +303,31 @@ export default function WorkPlanner() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">الموسم:</span>
-                      <span className="font-medium">{plan.season || "غير محدد"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">تاريخ البدء:</span>
-                      <span className="font-medium">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">تاريخ البدء</p>
+                      <p className="font-medium">
                         {new Date(plan.startDate).toLocaleDateString("ar-SA")}
-                      </span>
+                      </p>
                     </div>
+                    {plan.endDate && (
+                      <div>
+                        <p className="text-muted-foreground">تاريخ الانتهاء</p>
+                        <p className="font-medium">
+                          {new Date(plan.endDate).toLocaleDateString("ar-SA")}
+                        </p>
+                      </div>
+                    )}
                     {plan.estimatedCost && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">التكلفة المقدرة:</span>
-                        <span className="font-medium">{plan.estimatedCost} ريال</span>
+                      <div>
+                        <p className="text-muted-foreground">التكلفة المقدرة</p>
+                        <p className="font-medium">{plan.estimatedCost} ريال</p>
+                      </div>
+                    )}
+                    {plan.actualCost && (
+                      <div>
+                        <p className="text-muted-foreground">التكلفة الفعلية</p>
+                        <p className="font-medium">{plan.actualCost} ريال</p>
                       </div>
                     )}
                   </div>
@@ -215,43 +335,30 @@ export default function WorkPlanner() {
               </Card>
             ))}
           </div>
-        ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">لا توجد خطط عمل</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                ابدأ بإنشاء خطة عمل للموسم
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 ml-2" />
-                إنشاء خطة عمل
-              </Button>
-            </CardContent>
-          </Card>
         )}
 
+        {/* Create Work Plan Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>إنشاء خطة عمل جديدة</DialogTitle>
+              <DialogTitle>خطة عمل جديدة</DialogTitle>
               <DialogDescription>
-                أدخل تفاصيل خطة العمل للموسم
+                أنشئ خطة عمل جديدة للحقل المحدد
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="planName">اسم الخطة *</Label>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="planName">اسم الخطة</Label>
                   <Input
                     id="planName"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="مثال: خطة زراعة القمح 2025"
+                    placeholder="مثال: خطة موسم الشتاء 2025"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="cropType">نوع المحصول</Label>
                   <Input
                     id="cropType"
@@ -260,7 +367,7 @@ export default function WorkPlanner() {
                     placeholder="مثال: قمح"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="season">الموسم</Label>
                   <Input
                     id="season"
@@ -269,8 +376,8 @@ export default function WorkPlanner() {
                     placeholder="مثال: شتاء 2025"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">تاريخ البدء *</Label>
+                <div>
+                  <Label htmlFor="startDate">تاريخ البدء</Label>
                   <Input
                     id="startDate"
                     type="date"
@@ -280,7 +387,7 @@ export default function WorkPlanner() {
                   />
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="mt-6">
                 <Button
                   type="button"
                   variant="outline"
@@ -293,6 +400,139 @@ export default function WorkPlanner() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* AI Recommendations Dialog */}
+        <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                التوصيات الذكية بالـ AI
+              </DialogTitle>
+              <DialogDescription>
+                بناءً على تحليل البيانات، إليك التوصيات المقترحة
+              </DialogDescription>
+            </DialogHeader>
+
+            {aiRecommendations && (
+              <div className="space-y-6">
+                {/* Analysis Data */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">متوسط NDVI</p>
+                          <p className="text-lg font-bold">
+                            {aiRecommendations.analysisData.avgNdvi.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2">
+                        <Bug className="h-4 w-4 text-red-500" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">الآفات</p>
+                          <p className="text-lg font-bold">
+                            {aiRecommendations.analysisData.pestCount}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2">
+                        <Droplet className="h-4 w-4 text-blue-500" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">إجهاد مائي</p>
+                          <p className="text-lg font-bold">
+                            {aiRecommendations.analysisData.highWaterStressCount}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">الأمراض</p>
+                          <p className="text-lg font-bold">
+                            {aiRecommendations.analysisData.diseaseCount}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recommendations */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">التوصيات ({aiRecommendations.recommendations.length})</h3>
+                  {aiRecommendations.recommendations.map((rec: any, index: number) => (
+                    <Card key={index} className="border-r-4" style={{
+                      borderRightColor: rec.priority === 'high' ? '#f97316' : 
+                                       rec.priority === 'medium' ? '#3b82f6' : '#6b7280'
+                    }}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-base">{rec.title}</CardTitle>
+                          <div className="flex gap-2">
+                            <Badge className={priorityColors[rec.priority as keyof typeof priorityColors]}>
+                              {priorityLabels[rec.priority as keyof typeof priorityLabels]}
+                            </Badge>
+                            <Badge variant="outline">
+                              {timeframeLabels[rec.timeframe as keyof typeof timeframeLabels]}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">{rec.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAIDialogOpen(false)}
+              >
+                إغلاق
+              </Button>
+              <Button
+                onClick={handleCreateFromAI}
+                disabled={createFromRecommendations.isPending}
+                className="gap-2"
+              >
+                {createFromRecommendations.isPending ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    جاري الإنشاء...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    إنشاء خطة عمل من التوصيات
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

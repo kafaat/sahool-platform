@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane, Microscope } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Tractor, Wrench, Bell, Calendar, Activity, Plane, Microscope, Satellite, Zap, CloudSun } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -34,8 +34,11 @@ const menuItems = [
   { icon: Calendar, label: "خطط العمل", path: "/work-planner" },
   { icon: Plane, label: "تحليل الطائرات", path: "/drone-analysis" },
   { icon: Microscope, label: "الكشف عن الأمراض", path: "/disease-detection" },
+  { icon: Satellite, label: "الصور الفضائية", path: "/satellite-images" },
   { icon: Activity, label: "المراقبة المباشرة", path: "/live-monitoring" },
   { icon: Bell, label: "التنبيهات", path: "/alerts" },
+  { icon: CloudSun, label: "الطقس", path: "/weather" },
+  { icon: Zap, label: "المحاكي الشامل", path: "/simulator" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

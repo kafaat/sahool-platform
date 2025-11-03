@@ -900,6 +900,488 @@ const { data: processingStatus } = trpc.droneImages.getProcessingStatus.useQuery
 
 ---
 
+## 📡 Satellite Images API (Sentinel Hub)
+
+### Overview
+
+تكامل مع **Sentinel Hub** للحصول على صور الأقمار الصناعية من Sentinel-2. يوفر صور RGB حقيقية وصور NDVI لتحليل صحة المحاصيل.
+
+#### `satelliteImages.getTrueColorImage`
+
+**النوع:** Mutation  
+**المصادقة:** Protected  
+**الوصف:** الحصول على صورة RGB حقيقية من Sentinel-2
+
+**المدخلات:**
+```typescript
+{
+  bbox: {
+    minLon: number,
+    minLat: number,
+    maxLon: number,
+    maxLat: number
+  },
+  dateFrom: string, // YYYY-MM-DD
+  dateTo: string,
+  resolution?: number // default: 10m
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  imageBase64: string;
+  date: string;
+  resolution: number;
+  error?: string;
+}
+```
+
+**مثال استخدام:**
+```typescript
+const getImage = trpc.satelliteImages.getTrueColorImage.useMutation();
+const result = await getImage.mutateAsync({
+  bbox: {
+    minLon: 46.6753,
+    minLat: 24.7136,
+    maxLon: 46.7753,
+    maxLat: 24.8136
+  },
+  dateFrom: "2024-01-01",
+  dateTo: "2024-01-31",
+  resolution: 10
+});
+```
+
+#### `satelliteImages.getNDVIImage`
+
+**النوع:** Mutation  
+**المصادقة:** Protected  
+**الوصف:** الحصول على صورة NDVI ملونة مع إحصائيات
+
+**المدخلات:** نفس getTrueColorImage
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  imageBase64: string;
+  ndviStats: {
+    mean: number;
+    min: number;
+    max: number;
+  };
+  date: string;
+  resolution: number;
+  error?: string;
+}
+```
+
+**NDVI Color Mapping:**
+
+| NDVI Range | اللون | التفسير |
+|------------|-------|-------------|
+| < -0.2 | رمادي | ماء/غيوم |
+| -0.2 - 0.0 | بني | تربة عارية |
+| 0.0 - 0.2 | أصفر فاتح | نباتات ضعيفة |
+| 0.2 - 0.4 | أصفر-أخضر | نباتات متوسطة |
+| 0.4 - 0.6 | أخضر فاتح | نباتات جيدة |
+| 0.6 - 0.8 | أخضر | نباتات صحية |
+| > 0.8 | أخضر داكن | نباتات ممتازة |
+
+#### `satelliteImages.getAvailableDates`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على التواريخ المتاحة للصور في منطقة معينة
+
+**المدخلات:**
+```typescript
+{
+  bbox: { minLon, minLat, maxLon, maxLat },
+  dateFrom: string,
+  dateTo: string
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  dates: string[];
+  count: number;
+  error?: string;
+}
+```
+
+#### `satelliteImages.getFieldSatelliteImage`
+
+**النوع:** Mutation  
+**المصادقة:** Protected  
+**الوصف:** الحصول على صورة فضائية لحقل محدد
+
+**المدخلات:**
+```typescript
+{
+  fieldId: number;
+  dateFrom: string;
+  dateTo: string;
+  imageType: "true_color" | "ndvi";
+  resolution?: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  fieldName: string;
+  imageBase64: string;
+  ndviStats?: { mean, min, max };
+  date: string;
+  resolution: number;
+  bbox: { minLon, minLat, maxLon, maxLat };
+  error?: string;
+}
+```
+
+### Setup
+
+#### 1. إنشاء حساب Sentinel Hub
+
+1. زيارة [Copernicus Data Space](https://dataspace.copernicus.eu/)
+2. إنشاء حساب مجاني
+3. الحصول على OAuth credentials
+
+#### 2. إضافة Credentials
+
+في Settings → Secrets：
+```
+SENTINEL_HUB_CLIENT_ID=your-client-id
+SENTINEL_HUB_CLIENT_SECRET=your-client-secret
+```
+
+### Best Practices
+
+**اختيار التواريخ:** Sentinel-2 يمر فوق نفس المنطقة كل 5 أيام تقريباً. استخدم نطاق تاريخ 7-14 يوم لضمان الحصول على صورة.
+
+**Cloud Coverage:** النظام يستبعد تلقائياً الصور ذات التغطية السحابية > 30%.
+
+**Resolution:** 10m (دقة عالية)، 20m (متوسطة)، 60m (منخفضة).
+
+### Limitations
+
+- **Free Tier:** 1000 requests/month
+- **Max bbox size:** ~100 km²
+- **Historical data:** من 2015 حتى الآن
+- **Update frequency:** كل 5 أيام
+
+---
+
+## 11. Weather API (الطقس)
+
+### نظرة عامة
+
+تكامل كامل مع **OpenWeatherMap API** للحصول على بيانات الطقس الحالية والتوقعات والمؤشرات الزراعية للمزارع. يتضمن 5 procedures رئيسية مع Redis caching ودعم اللغة العربية.
+
+### Procedures
+
+#### `weather.getCurrentWeather`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على الطقس الحالي لموقع محدد
+
+**المدخلات:**
+```typescript
+{
+  lat: number;        // -90 إلى 90
+  lon: number;        // -180 إلى 180
+  farmId?: number;    // اختياري
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  farmId?: number;
+  location: { name, lat, lon };
+  current: {
+    temp: number;           // درجة مئوية
+    feelsLike: number;
+    tempMin: number;
+    tempMax: number;
+    pressure: number;       // هكتوباسكال
+    humidity: number;       // %
+    visibility: number;     // كم
+    windSpeed: number;      // كم/س
+    windDeg: number;        // درجة
+    clouds: number;         // %
+    weather: {
+      main: string;
+      description: string;
+      icon: string;
+    };
+    sunrise: string;        // ISO 8601
+    sunset: string;         // ISO 8601
+  };
+  timestamp: string;
+}
+```
+
+**مثال:**
+```typescript
+const weather = await trpc.weather.getCurrentWeather.useQuery({
+  lat: 24.7136,  // الرياض
+  lon: 46.6753,
+  farmId: 1,
+});
+
+console.log(`درجة الحرارة: ${weather.current.temp}°C`);
+console.log(`الرطوبة: ${weather.current.humidity}%`);
+```
+
+#### `weather.getForecast`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على توقعات الطقس لـ 5 أيام
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  farmId?: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  farmId?: number;
+  location: { name, lat, lon };
+  forecast: Array<{
+    date: string;           // YYYY-MM-DD
+    temp: { min, max, avg };
+    humidity: number;
+    pressure: number;
+    windSpeed: number;
+    clouds: number;
+    rain: number;           // mm
+    weather: { main, description, icon };
+  }>;
+  timestamp: string;
+}
+```
+
+**مثال:**
+```typescript
+const forecast = await trpc.weather.getForecast.useQuery({
+  lat: 24.7136,
+  lon: 46.6753,
+});
+
+forecast.forecast.forEach(day => {
+  console.log(`${day.date}: ${day.temp.max}°C / ${day.temp.min}°C`);
+});
+```
+
+#### `weather.getAgricultural`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** حساب المؤشرات الزراعية (5 مؤشرات)
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  farmId?: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  farmId?: number;
+  location: { name, lat, lon };
+  agricultural: {
+    heatStressIndex: {       // مؤشر الإجهاد الحراري
+      value: number;
+      level: 'high' | 'moderate' | 'low';
+      description: string;
+    };
+    irrigationNeed: {        // حاجة الري
+      level: 'high' | 'medium' | 'low';
+      description: string;
+    };
+    sprayingSuitability: {   // ملاءمة الرش
+      level: 'good' | 'moderate' | 'poor';
+      description: string;
+    };
+    frostRisk: {             // خطر الصقيع
+      level: 'high' | 'moderate' | 'none';
+      description: string;
+    };
+    cropGrowthIndex: {       // مؤشر نمو المحاصيل
+      value: number;         // 0-100
+      level: 'excellent' | 'good' | 'moderate' | 'poor';
+      description: string;
+    };
+  };
+  timestamp: string;
+}
+```
+
+**مثال:**
+```typescript
+const agri = await trpc.weather.getAgricultural.useQuery({
+  lat: 24.7136,
+  lon: 46.6753,
+  farmId: 1,
+});
+
+if (agri.agricultural.irrigationNeed.level === 'high') {
+  console.log('تنبيه: حاجة عالية للري!');
+}
+
+if (agri.agricultural.sprayingSuitability.level === 'poor') {
+  console.log('تحذير: غير مناسب للرش اليوم');
+}
+```
+
+#### `weather.getFarmWeather`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على طقس مزرعة محددة (شامل)
+
+**المدخلات:**
+```typescript
+{
+  farmId: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  farm: { id, name, location };
+  current: { ... };          // من getCurrentWeather
+  forecast: [ ... ];         // من getForecast
+  agricultural: { ... };     // من getAgricultural
+  timestamp: string;
+}
+```
+
+**مثال:**
+```typescript
+const farmWeather = await trpc.weather.getFarmWeather.useQuery({
+  farmId: 1,
+});
+
+console.log(`مزرعة: ${farmWeather.farm.name}`);
+console.log(`درجة الحرارة: ${farmWeather.current.temp}°C`);
+console.log(`مؤشر النمو: ${farmWeather.agricultural.cropGrowthIndex.value}`);
+```
+
+#### `weather.getAlerts`
+
+**النوع:** Query  
+**المصادقة:** Protected  
+**الوصف:** الحصول على تنبيهات الطقس
+
+**المدخلات:**
+```typescript
+{
+  lat: number;
+  lon: number;
+  farmId?: number;
+}
+```
+
+**المخرجات:**
+```typescript
+{
+  success: boolean;
+  farmId?: number;
+  location: { name, lat, lon };
+  alerts: Array<{
+    type: 'extreme_heat' | 'frost' | 'high_wind' | 'rain' | 'irrigation';
+    severity: 'high' | 'medium' | 'low';
+    title: string;
+    description: string;
+    icon: string;
+  }>;
+  alertCount: number;
+  timestamp: string;
+}
+```
+
+**مثال:**
+```typescript
+const alerts = await trpc.weather.getAlerts.useQuery({
+  lat: 24.7136,
+  lon: 46.6753,
+  farmId: 1,
+});
+
+if (alerts.alertCount > 0) {
+  alerts.alerts.forEach(alert => {
+    console.log(`${alert.icon} ${alert.title}: ${alert.description}`);
+  });
+}
+```
+
+### المؤشرات الزراعية
+
+| المؤشر | الوصف | النطاق | المثالي |
+|---------|---------|---------|----------|
+| **Heat Stress Index** | مؤشر الإجهاد الحراري | 0-50 | < 27 (منخفض) |
+| **Irrigation Need** | حاجة الري | low/medium/high | يعتمد على الحرارة والرطوبة |
+| **Spraying Suitability** | ملاءمة الرش | good/moderate/poor | يعتمد على الرياح |
+| **Frost Risk** | خطر الصقيع | none/moderate/high | < 5°C (عالي) |
+| **Crop Growth Index** | مؤشر نمو المحاصيل | 0-100 | > 80 (ممتاز) |
+
+### Setup
+
+#### 1. إنشاء حساب OpenWeatherMap
+
+1. زيارة [OpenWeatherMap](https://openweathermap.org/api)
+2. إنشاء حساب مجاني (Sign Up)
+3. الحصول على API key
+
+#### 2. إضافة API Key
+
+في Settings → Secrets：
+```
+OPENWEATHER_API_KEY=your-api-key
+```
+
+### Best Practices
+
+**Caching:** الطقس الحالي يُحفظ لمدة 10 دقائق، التوقعات لمدة ساعة.
+
+**التحديث التلقائي:** استخدم `refetchInterval` للتحديث التلقائي كل 5 دقائق.
+
+**المؤشرات الزراعية:** يُحسب من بيانات الطقس الحالية باستخدام معادلات معتمدة.
+
+### Limitations
+
+- **Free Tier:** 1000 calls/day
+- **Update frequency:** كل 10 دقائق (مع caching)
+- **Language:** العربية مدعومة
+- **Units:** مترية (درجة مئوية)
+
+---
+
 ## الخلاصة
 
 توفر منصة سَهول واجهة برمجة تطبيقات شاملة ومُحسّنة تدعم جميع ميزات المنصة. تتميز الواجهة بالأمان والأداء العالي والتوثيق الشامل، مما يجعلها مناسبة للتطبيقات الإنتاجية.
@@ -910,6 +1392,8 @@ const { data: processingStatus } = trpc.droneImages.getProcessingStatus.useQuery
 - ✅ **Redis Caching**: تحسين الأداء بنسبة 80%
 - ✅ **AI Work Planner**: توصيات ذكية بناءً على البيانات
 - ✅ **Cache Invalidation**: إلغاء تلقائي عند التحديث
+- ✅ **Sentinel Hub Integration**: صور أقمار صناعية مع NDVI
+- ✅ **Weather API**: طقس حالي وتوقعات ومؤشرات زراعية
 
 ---
 

@@ -2,10 +2,35 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Tractor, MapPin, AlertTriangle, TrendingUp, Loader2, Sprout, Bug, Droplet, BarChart3 } from "lucide-react";
+import { Tractor, MapPin, AlertTriangle, TrendingUp, Loader2, Sprout, Bug, Droplet, BarChart3, Clock } from "lucide-react";
 import { useMemo } from "react";
+import { Line, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
 
-// تحسين 1: إضافة type للإحصائيات
+// تسجيل مكونات Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
+
 interface Stat {
   title: string;
   value: number;
@@ -20,7 +45,6 @@ interface Stat {
   };
 }
 
-// تحسين 2: مكون منفصل للبطاقات
 function StatCard({ stat }: { stat: Stat }) {
   const Icon = stat.icon;
 
@@ -51,12 +75,11 @@ function StatCard({ stat }: { stat: Stat }) {
   );
 }
 
-// تحسين 3: مكون Loading منفصل
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-24"></div>
@@ -68,11 +91,22 @@ function DashboardSkeleton() {
           </Card>
         ))}
       </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {[1, 2].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-5 bg-gray-200 rounded w-32"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
 
-// تحسين 4: مكون Error منفصل
 function DashboardError({ error, onRetry }: { error: any; onRetry: () => void }) {
   return (
     <Card className="border-red-200 bg-red-50">
@@ -95,30 +129,42 @@ function DashboardError({ error, onRetry }: { error: any; onRetry: () => void })
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // استخدام dashboard router الجديد
   const {
     data: dashboardStats,
     isLoading,
     error,
     refetch,
   } = trpc.dashboard.getStats.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 60 * 1000, // تحديث كل دقيقة
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000,
   });
 
-  // الحصول على آخر التنبيهات
   const {
     data: recentAlerts,
     isLoading: alertsLoading,
   } = trpc.dashboard.getRecentAlerts.useQuery(
     { limit: 5 },
     {
-      staleTime: 1 * 60 * 1000, // 1 minute
-      refetchInterval: 30 * 1000, // تحديث كل 30 ثانية
+      staleTime: 1 * 60 * 1000,
+      refetchInterval: 30 * 1000,
     }
   );
 
-  // حساب الإحصائيات
+  // الحصول على بيانات الرسوم البيانية
+  const {
+    data: ndviChartData,
+  } = trpc.dashboard.getChartData.useQuery(
+    { type: "ndvi", period: "month" },
+    { staleTime: 10 * 60 * 1000 }
+  );
+
+  const {
+    data: diseasesChartData,
+  } = trpc.dashboard.getChartData.useQuery(
+    { type: "diseases", period: "month" },
+    { staleTime: 10 * 60 * 1000 }
+  );
+
   const stats = useMemo<Stat[]>(() => {
     if (!dashboardStats) return [];
 
@@ -206,16 +252,87 @@ export default function Dashboard() {
     ];
   }, [dashboardStats]);
 
-  // معالجة الأخطاء
-  if (error) {
-    return (
-      <DashboardLayout>
-        <DashboardError error={error} onRetry={refetch} />
-      </DashboardLayout>
-    );
-  }
+  // إعداد بيانات رسم NDVI
+  const ndviChartConfig = useMemo(() => {
+    if (!ndviChartData) return null;
 
-  // معالجة التحميل
+    return {
+      data: {
+        labels: ndviChartData.map((item) => item.date),
+        datasets: [
+          {
+            label: "متوسط NDVI",
+            data: ndviChartData.map((item) => item.value),
+            borderColor: "#4CAF50",
+            backgroundColor: "rgba(76, 175, 80, 0.1)",
+            fill: true,
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            mode: "index" as const,
+            intersect: false,
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 1,
+          },
+        },
+      },
+    };
+  }, [ndviChartData]);
+
+  // إعداد بيانات رسم الأمراض
+  const diseasesChartConfig = useMemo(() => {
+    if (!diseasesChartData) return null;
+
+    return {
+      data: {
+        labels: diseasesChartData.map((item) => item.date),
+        datasets: [
+          {
+            label: "الأمراض المكتشفة",
+            data: diseasesChartData.map((item) => item.value),
+            backgroundColor: "#FF9800",
+            borderColor: "#F57C00",
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            mode: "index" as const,
+            intersect: false,
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+            },
+          },
+        },
+      },
+    };
+  }, [diseasesChartData]);
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -224,100 +341,143 @@ export default function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <DashboardLayout>
+        <DashboardError error={error} onRetry={refetch} />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              مرحباً، {user?.name || "مستخدم"}
-            </h1>
-            <p className="text-gray-500 mt-1">
-              آخر تحديث: {dashboardStats?.lastUpdated ? new Date(dashboardStats.lastUpdated).toLocaleString('ar-SA') : ''}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">لوحة التحكم</h1>
+          <p className="text-muted-foreground mt-2">
+            مرحباً {user?.name || "مستخدم"}، إليك نظرة عامة على مزارعك
+          </p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <StatCard key={index} stat={stat} />
           ))}
         </div>
 
-        {/* Recent Alerts */}
-        {recentAlerts && recentAlerts.length > 0 && (
+        {/* Charts */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* NDVI Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                اتجاه NDVI (آخر 30 يوم)
+              </CardTitle>
+              <CardDescription>
+                مؤشر صحة المحاصيل عبر الزمن
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div style={{ height: "300px" }}>
+                {ndviChartConfig ? (
+                  <Line data={ndviChartConfig.data} options={ndviChartConfig.options} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Diseases Chart */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
-                آخر التنبيهات
+                كشف الأمراض (آخر 30 يوم)
               </CardTitle>
-              <CardDescription>تنبيهات تحتاج إلى اهتمام</CardDescription>
+              <CardDescription>
+                عدد الأمراض المكتشفة يومياً
+              </CardDescription>
             </CardHeader>
             <CardContent>
+              <div style={{ height: "300px" }}>
+                {diseasesChartConfig ? (
+                  <Bar data={diseasesChartConfig.data} options={diseasesChartConfig.options} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Alerts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              آخر التنبيهات
+            </CardTitle>
+            <CardDescription>
+              التنبيهات الأخيرة من جميع المصادر
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {alertsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : recentAlerts && recentAlerts.length > 0 ? (
               <div className="space-y-3">
                 {recentAlerts.map((alert) => (
                   <div
                     key={alert.id}
-                    className={`p-3 rounded-lg border-l-4 ${
-                      alert.priority === 'high'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-yellow-500 bg-yellow-50'
-                    }`}
+                    className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{alert.title}</h4>
-                        <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(alert.createdAt).toLocaleDateString('ar-SA')}
-                      </span>
+                    <div className="mt-1">
+                      {alert.priority === "critical" || alert.priority === "high" ? (
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-blue-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(alert.createdAt).toLocaleString("ar-SA")}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>إجراءات سريعة</CardTitle>
-            <CardDescription>الوصول السريع إلى الميزات الرئيسية</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-3">
-              <a
-                href="/farms"
-                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all"
-              >
-                <MapPin className="h-6 w-6 text-green-600 mb-2" />
-                <h4 className="font-semibold text-sm">إدارة المزارع</h4>
-                <p className="text-xs text-gray-500 mt-1">عرض وإدارة المزارع</p>
-              </a>
-              <a
-                href="/drone-analysis"
-                className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all"
-              >
-                <BarChart3 className="h-6 w-6 text-purple-600 mb-2" />
-                <h4 className="font-semibold text-sm">تحليل الطائرات</h4>
-                <p className="text-xs text-gray-500 mt-1">رفع وتحليل الصور</p>
-              </a>
-              <a
-                href="/disease-detection"
-                className="p-4 rounded-lg border border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all"
-              >
-                <Bug className="h-6 w-6 text-red-600 mb-2" />
-                <h4 className="font-semibold text-sm">كشف الأمراض</h4>
-                <p className="text-xs text-gray-500 mt-1">تحليل أمراض المحاصيل</p>
-              </a>
-            </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>لا توجد تنبيهات حالياً</p>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Last Updated */}
+        {dashboardStats && (
+          <div className="text-xs text-muted-foreground text-center">
+            آخر تحديث: {new Date(dashboardStats.lastUpdated).toLocaleString("ar-SA")}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

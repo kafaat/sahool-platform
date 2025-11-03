@@ -5,6 +5,9 @@ import { droneImagesRouter } from "./routers/droneImages";
 import { diseaseDetectionRouter } from "./routers/diseaseDetection";
 import { dashboardRouter } from "./routers/dashboard";
 import { workPlannerRouter } from "./routers/workPlanner";
+import { satelliteImagesRouter } from "./routers/satelliteImages";
+import { simulatorRouter } from "./routers/simulator";
+import { weatherRouter } from "./routers/weather";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -112,6 +115,9 @@ export const appRouter = router({
   workPlanner: workPlannerRouter,
   droneImages: droneImagesRouter,
   diseaseDetection: diseaseDetectionRouter,
+  satelliteImages: satelliteImagesRouter,
+  simulator: simulatorRouter,
+  weather: weatherRouter,
   
   // ===== Authentication =====
   auth: router({
