@@ -29,9 +29,9 @@ function Router() {
       <Route path={"/live-monitoring"} component={LiveMonitoring} />
       <Route path={"/drone-analysis"} component={DroneAnalysis} />
       <Route path={"/disease-detection"} component={DiseaseDetection} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
-      <Route component={NotFound} />
+      <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
 }

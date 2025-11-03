@@ -456,3 +456,56 @@
 - [ ] مراجعة شاملة
 - [ ] حفظ checkpoint نهائي
 - [ ] إنشاء تقرير نهائي شامل
+
+
+## المرحلة 21: الإصلاح والتحسين الشامل
+
+### إصلاح الأخطاء
+- [ ] إصلاح أخطاء TypeScript (64 خطأ - framer-motion)
+- [x] إصلاح PathError في routing
+- [x] إصلاح أخطاء البناء
+
+### الاختبار
+- [ ] اختبار جميع الصفحات
+- [ ] اختبار جميع tRPC procedures
+- [ ] اختبار الأداء
+- [ ] اختبار الاستقرار
+
+### Checkpoint النهائي
+- [ ] حفظ checkpoint نهائي
+- [ ] إنشاء تقرير نهائي
+
+
+## المرحلة 22: تنفيذ التوصيات والمقترحات
+
+### المرحلة 1: ربط Redis Caching
+- [ ] ربط Redis مع farms procedures
+- [ ] ربط Redis مع droneImages procedures
+- [ ] ربط Redis مع diseaseDetection procedures
+- [ ] إضافة cache invalidation
+- [ ] اختبار الأداء
+
+### المرحلة 2: تحديث Dashboard
+- [ ] ربط مع بيانات المزارع الحقيقية
+- [ ] إضافة إحصائيات Drone Analysis
+- [ ] إضافة إحصائيات Disease Detection
+- [ ] إضافة رسوم بيانية للإنتاجية
+- [ ] تحسين الواجهة
+
+### المرحلة 3: تحسين Work Planner
+- [ ] ربط مع نتائج Drone Analysis
+- [ ] توصيات تلقائية بناءً على NDVI
+- [ ] تكامل مع Disease Detection
+- [ ] جدولة تلقائية للمهام
+- [ ] تحسين الواجهة
+
+### المرحلة 4: التوثيق الشامل
+- [x] تحديث userGuide.md
+- [ ] إنشاء API_DOCUMENTATION.md
+- [ ] إنشاء DEVELOPER_GUIDE.md
+- [ ] إنشاء FAQ.md
+
+### المرحلة 5: Checkpoint النهائي
+- [ ] اختبار شامل
+- [ ] حفظ checkpoint
+- [ ] إنشاء تقرير نهائي
