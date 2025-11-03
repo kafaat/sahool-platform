@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { protectedProcedure, router } from '../_core/trpc';
 import { droneImages, processingJobs, ndviAnalysis, pestDetections, waterStressAnalysis } from '../../drizzle/schema';
 import { storagePut } from '../storage';
+import { withCache, farmCacheKey, invalidateFarmCache, cacheGet, cacheSet, cacheDel } from '../_core/redis';
 
 export const droneImagesRouter = router({
   // رفع صورة طائرة
@@ -106,25 +107,28 @@ export const droneImagesRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const db = await ctx.db;
-      if (!db) {
-        return [];
-      }
+      const cacheKey = farmCacheKey(input.farmId, `drone-images:${input.fieldId || 'all'}:${input.limit}:${input.offset}`);
+      return await withCache(cacheKey, 180, async () => {
+        const db = await ctx.db;
+        if (!db) {
+          return [];
+        }
 
-      const conditions = [eq(droneImages.farmId, input.farmId)];
-      if (input.fieldId) {
-        conditions.push(eq(droneImages.fieldId, input.fieldId));
-      }
+        const conditions = [eq(droneImages.farmId, input.farmId)];
+        if (input.fieldId) {
+          conditions.push(eq(droneImages.fieldId, input.fieldId));
+        }
 
-      const images = await db
-        .select()
-        .from(droneImages)
-        .where(conditions.length > 1 ? conditions[0] : conditions[0])
-        .limit(input.limit)
-        .offset(input.offset)
-        .orderBy(droneImages.createdAt);
+        const images = await db
+          .select()
+          .from(droneImages)
+          .where(conditions.length > 1 ? conditions[0] : conditions[0])
+          .limit(input.limit)
+          .offset(input.offset)
+          .orderBy(droneImages.createdAt);
 
-      return images;
+        return images;
+      });
     }),
 
   // الحصول على حالة المعالجة
@@ -135,17 +139,20 @@ export const droneImagesRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const db = await ctx.db;
-      if (!db) {
-        return [];
-      }
+      const cacheKey = `drone-image:${input.imageId}:processing-status`;
+      return await withCache(cacheKey, 30, async () => {
+        const db = await ctx.db;
+        if (!db) {
+          return [];
+        }
 
-      const jobs = await db
-        .select()
-        .from(processingJobs)
-        .where(eq(processingJobs.imageId, input.imageId));
+        const jobs = await db
+          .select()
+          .from(processingJobs)
+          .where(eq(processingJobs.imageId, input.imageId));
 
-      return jobs;
+        return jobs;
+      });
     }),
 
   // الحصول على نتائج التحليل

@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Tractor, MapPin, AlertTriangle, Users, TrendingUp, Activity, Loader2 } from "lucide-react";
+import { Tractor, MapPin, AlertTriangle, TrendingUp, Loader2, Sprout, Bug, Droplet, BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 
 // تحسين 1: إضافة type للإحصائيات
@@ -56,7 +56,7 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-24"></div>
@@ -95,122 +95,127 @@ function DashboardError({ error, onRetry }: { error: any; onRetry: () => void })
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // تحسين 5: استخدام enabled للتحكم في الطلبات
+  // استخدام dashboard router الجديد
   const {
-    data: farms,
-    isLoading: farmsLoading,
-    error: farmsError,
-    refetch: refetchFarms,
-  } = trpc.farms.list.useQuery(undefined, {
+    data: dashboardStats,
+    isLoading,
+    error,
+    refetch,
+  } = trpc.dashboard.getStats.useQuery(undefined, {
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 60 * 1000, // تحديث كل دقيقة
   });
 
+  // الحصول على آخر التنبيهات
   const {
-    data: equipment,
-    isLoading: equipmentLoading,
-    error: equipmentError,
-  } = trpc.equipment.list.useQuery(
-    { farmId: farms?.[0]?.id || 0 },
+    data: recentAlerts,
+    isLoading: alertsLoading,
+  } = trpc.dashboard.getRecentAlerts.useQuery(
+    { limit: 5 },
     {
-      enabled: !!farms?.[0]?.id,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 1 * 60 * 1000, // 1 minute
+      refetchInterval: 30 * 1000, // تحديث كل 30 ثانية
     }
   );
 
-  const {
-    data: alerts,
-    isLoading: alertsLoading,
-    error: alertsError,
-  } = trpc.alerts.list.useQuery(undefined, {
-    staleTime: 1 * 60 * 1000, // 1 minute for alerts
-  });
-
-  const {
-    data: users,
-    isLoading: usersLoading,
-    error: usersError,
-  } = trpc.users.list.useQuery(undefined, {
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // تحسين 6: استخدام useMemo للحسابات
+  // حساب الإحصائيات
   const stats = useMemo<Stat[]>(() => {
-    const activeAlerts = alerts?.filter((a) => a.status === "active").length || 0;
-    const activeEquipment = equipment?.filter((e) => e.status === "active").length || 0;
+    if (!dashboardStats) return [];
 
     return [
       {
         title: "المزارع النشطة",
-        value: farms?.length || 0,
+        value: dashboardStats.farms.totalFarms,
         icon: MapPin,
-        description: "إجمالي المزارع المسجلة",
+        description: `إجمالي المساحة: ${dashboardStats.farms.totalArea.toFixed(1)} هكتار`,
         color: "text-green-600",
         bgColor: "bg-green-50",
         borderColor: "#367C2B",
-        trend: {
-          value: 12,
-          isPositive: true,
-        },
+      },
+      {
+        title: "الحقول",
+        value: dashboardStats.fields.totalFields,
+        icon: Sprout,
+        description: "إجمالي الحقول المسجلة",
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-50",
+        borderColor: "#10B981",
       },
       {
         title: "المعدات النشطة",
-        value: activeEquipment,
+        value: dashboardStats.equipment.activeEquipment,
         icon: Tractor,
-        description: "معدات قيد التشغيل",
+        description: `من أصل ${dashboardStats.equipment.totalEquipment} معدة`,
         color: "text-blue-600",
         bgColor: "bg-blue-50",
         borderColor: "#2196F3",
+      },
+      {
+        title: "صور الطائرات",
+        value: dashboardStats.droneAnalysis.totalImages,
+        icon: BarChart3,
+        description: `معالج: ${dashboardStats.droneAnalysis.processedImages}`,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
+        borderColor: "#9C27B0",
+      },
+      {
+        title: "متوسط NDVI",
+        value: parseFloat(dashboardStats.droneAnalysis.avgNdvi.toFixed(2)),
+        icon: Sprout,
+        description: "مؤشر صحة المحاصيل",
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+        borderColor: "#4CAF50",
         trend: {
-          value: 8,
-          isPositive: true,
+          value: 5,
+          isPositive: dashboardStats.droneAnalysis.avgNdvi > 0.5,
         },
       },
       {
-        title: "التنبيهات النشطة",
-        value: activeAlerts,
-        icon: AlertTriangle,
-        description: "تنبيهات تحتاج إلى اهتمام",
+        title: "الآفات المكتشفة",
+        value: dashboardStats.droneAnalysis.totalPests,
+        icon: Bug,
+        description: "تحتاج إلى معالجة",
         color: "text-red-600",
         bgColor: "bg-red-50",
         borderColor: "#F44336",
         trend: {
-          value: 5,
+          value: 12,
           isPositive: false,
         },
       },
       {
-        title: "المستخدمين",
-        value: users?.length || 1,
-        icon: Users,
-        description: "مستخدمين نشطين",
-        color: "text-purple-600",
-        bgColor: "bg-purple-50",
-        borderColor: "#9C27B0",
-        trend: {
-          value: 3,
-          isPositive: true,
-        },
+        title: "إجهاد مائي عالٍ",
+        value: dashboardStats.droneAnalysis.highWaterStress,
+        icon: Droplet,
+        description: "مناطق تحتاج ري",
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+        borderColor: "#FF9800",
+      },
+      {
+        title: "كشف الأمراض",
+        value: dashboardStats.diseaseDetection.completedDetections,
+        icon: AlertTriangle,
+        description: `من أصل ${dashboardStats.diseaseDetection.totalDetections}`,
+        color: "text-yellow-600",
+        bgColor: "bg-yellow-50",
+        borderColor: "#FFC107",
       },
     ];
-  }, [farms, equipment, alerts, users]);
+  }, [dashboardStats]);
 
-  // تحسين 7: معالجة الأخطاء بشكل أفضل
-  const isLoading = farmsLoading || equipmentLoading || alertsLoading || usersLoading;
-  const hasError = farmsError || equipmentError || alertsError || usersError;
-
-  if (hasError) {
+  // معالجة الأخطاء
+  if (error) {
     return (
       <DashboardLayout>
-        <DashboardError
-          error={farmsError || equipmentError || alertsError || usersError}
-          onRetry={() => {
-            refetchFarms();
-          }}
-        />
+        <DashboardError error={error} onRetry={refetch} />
       </DashboardLayout>
     );
   }
 
+  // معالجة التحميل
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -225,14 +230,12 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">لوحة التحكم</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              مرحباً، {user?.name || "مستخدم"}
+            </h1>
             <p className="text-gray-500 mt-1">
-              مرحباً {user?.name}، إليك نظرة عامة على مزارعك
+              آخر تحديث: {dashboardStats?.lastUpdated ? new Date(dashboardStats.lastUpdated).toLocaleString('ar-SA') : ''}
             </p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Activity className="h-4 w-4" />
-            <span>آخر تحديث: الآن</span>
           </div>
         </div>
 
@@ -243,34 +246,75 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Alerts */}
+        {recentAlerts && recentAlerts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                آخر التنبيهات
+              </CardTitle>
+              <CardDescription>تنبيهات تحتاج إلى اهتمام</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentAlerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className={`p-3 rounded-lg border-l-4 ${
+                      alert.priority === 'high'
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-yellow-500 bg-yellow-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{alert.title}</h4>
+                        <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(alert.createdAt).toLocaleDateString('ar-SA')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>النشاط الأخير</CardTitle>
-            <CardDescription>آخر الأحداث في مزارعك</CardDescription>
+            <CardTitle>إجراءات سريعة</CardTitle>
+            <CardDescription>الوصول السريع إلى الميزات الرئيسية</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {alerts?.slice(0, 5).map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-                >
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                  <div className="flex-1">
-                    <p className="font-medium">{alert.title}</p>
-                    <p className="text-sm text-gray-500">{alert.message}</p>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {new Date(alert.createdAt).toLocaleDateString('ar-SA')}
-                  </span>
-                </div>
-              ))}
-              {(!alerts || alerts.length === 0) && (
-                <p className="text-center text-gray-500 py-8">
-                  لا توجد تنبيهات حديثة
-                </p>
-              )}
+            <div className="grid gap-3 md:grid-cols-3">
+              <a
+                href="/farms"
+                className="p-4 rounded-lg border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all"
+              >
+                <MapPin className="h-6 w-6 text-green-600 mb-2" />
+                <h4 className="font-semibold text-sm">إدارة المزارع</h4>
+                <p className="text-xs text-gray-500 mt-1">عرض وإدارة المزارع</p>
+              </a>
+              <a
+                href="/drone-analysis"
+                className="p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all"
+              >
+                <BarChart3 className="h-6 w-6 text-purple-600 mb-2" />
+                <h4 className="font-semibold text-sm">تحليل الطائرات</h4>
+                <p className="text-xs text-gray-500 mt-1">رفع وتحليل الصور</p>
+              </a>
+              <a
+                href="/disease-detection"
+                className="p-4 rounded-lg border border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all"
+              >
+                <Bug className="h-6 w-6 text-red-600 mb-2" />
+                <h4 className="font-semibold text-sm">كشف الأمراض</h4>
+                <p className="text-xs text-gray-500 mt-1">تحليل أمراض المحاصيل</p>
+              </a>
             </div>
           </CardContent>
         </Card>

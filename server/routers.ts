@@ -3,10 +3,13 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { droneImagesRouter } from "./routers/droneImages";
 import { diseaseDetectionRouter } from "./routers/diseaseDetection";
+import { dashboardRouter } from "./routers/dashboard";
+import { workPlannerRouter } from "./routers/workPlanner";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import { withCache, userCacheKey, farmCacheKey, invalidateUserCache, invalidateFarmCache } from "./_core/redis";
 
 // ===== Validation Schemas =====
 
@@ -105,6 +108,8 @@ async function verifyFieldOwnership(fieldId: number, userId: number) {
 
 export const appRouter = router({
   system: systemRouter,
+  dashboard: dashboardRouter,
+  workPlanner: workPlannerRouter,
   droneImages: droneImagesRouter,
   diseaseDetection: diseaseDetectionRouter,
   
@@ -162,7 +167,10 @@ export const appRouter = router({
   farms: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       try {
-        return await db.getUserFarms(ctx.user.id);
+        const cacheKey = userCacheKey(ctx.user.id, 'farms:list');
+        return await withCache(cacheKey, 300, async () => {
+          return await db.getUserFarms(ctx.user.id);
+        });
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -175,15 +183,21 @@ export const appRouter = router({
     getById: protectedProcedure
       .input(z.object({ farmId: z.number().positive() }))
       .query(async ({ ctx, input }) => {
-        const farm = await verifyFarmOwnership(input.farmId, ctx.user.id);
-        return farm;
+        const cacheKey = farmCacheKey(input.farmId, 'details');
+        return await withCache(cacheKey, 300, async () => {
+          const farm = await verifyFarmOwnership(input.farmId, ctx.user.id);
+          return farm;
+        });
       }),
     
     create: protectedProcedure
       .input(farmSchema)
       .mutation(async ({ ctx, input }) => {
         try {
-          return await db.createFarm({ ...input, ownerId: ctx.user.id });
+          const result = await db.createFarm({ ...input, ownerId: ctx.user.id });
+          // Invalidate user farms cache
+          await invalidateUserCache(ctx.user.id);
+          return result;
         } catch (error) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -198,7 +212,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await verifyFarmOwnership(input.farmId, ctx.user.id);
         try {
-          return await db.updateFarm(input.farmId, input);
+          const result = await db.updateFarm(input.farmId, input);
+          // Invalidate farm and user cache
+          await invalidateFarmCache(input.farmId);
+          await invalidateUserCache(ctx.user.id);
+          return result;
         } catch (error) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -213,7 +231,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await verifyFarmOwnership(input.farmId, ctx.user.id);
         try {
-          return await db.deleteFarm(input.farmId);
+          const result = await db.deleteFarm(input.farmId);
+          // Invalidate farm and user cache
+          await invalidateFarmCache(input.farmId);
+          await invalidateUserCache(ctx.user.id);
+          return result;
         } catch (error) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

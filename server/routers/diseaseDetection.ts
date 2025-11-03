@@ -3,6 +3,7 @@ import { protectedProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
 import { diseaseDetections, detectedDiseases, diseaseDatabase } from '../../drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
+import { withCache, farmCacheKey, invalidateFarmCache } from '../_core/redis';
 
 export const diseaseDetectionRouter = router({
   // رفع صورة للتحليل
